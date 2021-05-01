@@ -1,0 +1,128 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://kit.fontawesome.com/5063998086.js" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="{% static 'fund/styles.css' %}">
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    </head>
+
+    <body>
+        <header class="page-header">
+            <nav>
+                <a href="#0" class="logo">
+                <div width="140" height="49">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <span class="title">Liquidity & Leverage</span>
+                </a>
+                <button class="toggle-mob-menu" aria-expanded="false" aria-label="open menu">
+                <div width="20" height="30" aria-hidden="true">
+                    <i class="fas fa-angle-double-down"></i>
+                </div>
+                </button>
+                <ul class="admin-menu">
+                <li class="menu-heading">
+                    <h3>Pages</h3>
+                </li>
+                <li>
+                    <a class="nav-link" href="{% url 'scenarios' %}">
+                        <div>
+                            <i class="fas fa-chart-line fa-lg"></i>
+                        </div>
+                        <span>Scenarios</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{% url 'saved' %}">
+                    <div>
+                        <i class="fas fa-save fa-lg"></i>
+                    </div>
+                    <span>Saved</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{% url 'shared' %}">
+                    <div>
+                        <i class="fas fa-share-alt-square fa-lg"></i>
+                    </div>
+                    <span>Shared</span>
+                    </a>
+                </li>
+
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">
+                        <div>
+                            <i class="fas fa-sign-out-alt fa-lg"></i>
+                        </div>
+                        <span>Log Out</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">
+                        <div>
+                            <i class="fas fa-sign-in-alt fa-lg"></i>
+                        </div>
+                        <span>Log In</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}">
+                        <div>
+                            <i class="fas fa-registered fa-lg"></i>
+                        </div>
+                        <span>Register</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                <li>
+                    <div class="switch">
+                        <input type="checkbox" id="mode" checked>
+                        <label for="mode">
+                            <span></span>
+                            <span>Dark</span>
+                        </label>
+                    </div>
+                    <button class="collapse-btn" aria-expanded="true" aria-label="collapse menu">
+                    <section aria-hidden="true">
+                        <i class="fas fa-angle-double-left"></i>
+                    </section>
+                    <span>Collapse</span>
+                    </button>
+                </li>
+                </ul>
+            </nav>
+        </header>
+        <section class="page-content">
+            <section class="title-and-user">
+                <div>Investment Fund Liquidity and Leverage Platform</div>
+                <div class="admin-profile">
+                <span class="greeting">
+                    {% if user.is_authenticated %}
+                            <a class="nav-link" href="#"><strong id="username">Hello, {{ user.username }}</strong></a>
+                    {% endif %}
+                </span>
+                <div class="notifications">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                </div>
+            </section>
+        
+            {% comment %} <div class="content"> {% endcomment %}
+                {% block content %}
+                {% endblock %}
+            {% comment %} </div> {% endcomment %}
+        </section>
+    </body>
+        
+        {% block script %}
+            <script src="{% static 'fund/fund.js' %}"></script>
+        {% endblock %}
+</html>

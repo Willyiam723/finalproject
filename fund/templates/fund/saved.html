@@ -1,0 +1,18 @@
+{% extends "fund/main_page.html" %}
+{% load static %}
+
+{% block content %}
+<div id="allposts-view">
+    <h1>All Saved Scenarios</h1>
+    <div id="allposts">
+    </div>
+</div>
+<div id="profile-view">
+</div>
+<div id="following-view">
+</div>
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'fund/fund.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "fund/main_page.html" %}
+{% load static %}
+
+{% block content %}
+    <section class="grid">
+        <article class="grid-chart">
+            <div class="grid-cell">
+                <div id="hisTrend"></div>
+            </div>
+        </article>
+        <article class="grid-chart">
+            <div class="grid-cell">
+                <div id="assetComp"></div>
+            </div>
+        </article>
+        <article class="grid-chart">
+            <div class="grid-cell">
+                <div id="liqImpact"></div>
+            </div>
+        </article>
+        <article class="grid-chart">
+            <div class="grid-cell">
+                <div id="levImpact"></div>
+            </div>
+        </article>
+        <article class="grid-group">
+            <div class="grid-cell">
+                <div class="trade-form-wrapper">
+                    <div class="trade-form">Trade</div>
+                            {% comment %} <tr>
+                                <th>Transaction</th>
+                                <th>Security</th>
+                                <th>Amount</th>
+                            </tr> {% endcomment %}
+                        <form class="form" action="{% url 'scenarios' %}" method="POST">
+                            {% csrf_token %}
+                            {{formset.management_form}}
+                            
+                            {% for form in formset_empty %}
+                            
+                                {{form}}
+                                <hr>
+                            {% endfor %}
+                            <input type="submit" class="btn btn-sm btn-info" name="Submit">
+                        </form>
+                </div>
+            </div>
+        </article>
+        <article class="grid-group">
+            <div class="grid-cell">
+                <div class="effective-trades">
+                    <div>Effective Trades</div>
+                    {% comment %} <form action="{% url 'scenarios' %}" method="POST"> {% endcomment %}
+                        {% comment %} {% csrf_token %} {% endcomment %}
+                        {% comment %} {{formset.management_form}} {% endcomment %}
+                        <table class="table table-sm">
+                            <tr>
+                                <th>Transaction</th>
+                                <th>Security</th>
+                                <th>Amount</th>
+                            </tr>
+
+                            {% for form in formset %}
+                            <tr>
+                                <td>{{form.transaction}}</td>
+                                <td>{{form.security}}</td>
+                                <td>{{form.amount}}</td>
+                            </tr>
+                            {% endfor %}
+
+			            </table> 
+                            {% comment %} <hr> {% endcomment %}
+                        {% comment %} {% endfor %} {% endcomment %}
+				        {% comment %} <input type="submit" class="btn btn-sm btn-info" name="Submit"> {% endcomment %}
+			        {% comment %} </form> {% endcomment %}
+                </div>
+            </div>
+        </article>
+        <article class="grid-chart">
+        </article>
+    </section>
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'fund/fund.js' %}"></script>
+{% endblock %}

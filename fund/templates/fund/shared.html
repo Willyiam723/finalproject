@@ -1,0 +1,27 @@
+{% extends "fund/main_page.html" %}
+{% load static %}
+
+{% block content %}
+<div id="allposts-view">
+    <h1>All Posts</h1>
+    <div class="post">
+        {% if user.is_authenticated %}
+        <form class="new_post">
+            <h3>New Post</h3>
+            <textarea id="post_content" placeholder="Tell the world!"></textarea>
+            <input id="content" type="submit" class="btn btn-primary" value="Post"/>
+        </form>
+        {% endif %}
+    </div>
+    <div id="allposts">
+    </div>
+</div>
+<div id="profile-view">
+</div>
+<div id="following-view">
+</div>
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'fund/fund.js' %}"></script>
+{% endblock %}
