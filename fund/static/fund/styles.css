@@ -144,11 +144,12 @@ ul {
 a,
 button {
   color: inherit;
+  font-weight: bold;
 }
 
-a {
+/* a {
   text-decoration: none;
-}
+} */
 
 button {
   background: none;
@@ -168,8 +169,7 @@ label {
   cursor: pointer;
 }
 
-button,
-input {
+button {
   border: none;
 }
 
@@ -486,6 +486,12 @@ strong {
 .form {
   display: flex;
   flex-direction: column;
+}
+
+.form .button-wrapper{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
 }
 
 /* .grid-cell > div {

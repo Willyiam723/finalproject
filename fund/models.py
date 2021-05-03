@@ -50,31 +50,33 @@ class Profile(models.Model):
         return f"total follower for {self.user.username}: {self.follower.count()} - {follower_str} is following {self.user.username}"
 
 class Liquidity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='liquidity_user')
     hqla = models.FloatField(default=2000)
     la = models.FloatField(default=7000)
     ila = models.FloatField(default=14000)
     cash_outflow = models.FloatField(default=6000)
 
-    def serialize(self):
+    def serialize(self, user):
         return {
             "hqla": self.hqla,
             "la": self.la,
             "ila": self.ila,
             "cash_outflow": self.cash_outflow,
-            "surplus": self.hqla.sum() + self.la.sum() + self.cash_outflow.sum()
+            "surplus": self.hqla + self.la - self.cash_outflow
         }
 
 class Leverage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='leverage_user')
     secured_debt = models.FloatField(default=1000)
     unsecured_debt = models.FloatField(default=2000)
     synthetics = models.FloatField(default=3900)
 
-    def serialize(self):
+    def serialize(self, user):
         return {
             "secured_debt": self.secured_debt,
             "unsecured_debt": self.unsecured_debt,
             "synthetics": self.synthetics,
-            "leverage": self.secured_debt.sum() + self.unsecured_debt.sum() + self.synthetics.sum()
+            "leverage": self.secured_debt + self.unsecured_debt + self.synthetics
         }
 
 class Trade(models.Model):
@@ -95,12 +97,11 @@ class Trade(models.Model):
     security = models.CharField(max_length=50, choices=CLASSIFICATION)
     amount = models.FloatField()
 
-    def serialize(self,user,post):
+    def serialize(self, user):
         return {
             "tradeid": self.id,
             "userid": self.user.id,
-            "username": self.user.username,
             "transaction": self.transaction,
             "security": self.security,
-            "amount": self.amount,
+            "amount": self.amount
         }

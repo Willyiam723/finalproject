@@ -599,222 +599,294 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Render historical liquidity and leverage charts
-  let trace_liq = {
-      x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00'],
-      y: [1.23, 1.34, 1.17],
-      type: 'scatter',
-      mode: "lines",
-      name: 'Liquidity Ratio',
-      line: {color: '#7F7F7F'}
-    };
+  // Get posts information
+  fetch('charts/')
+  .then(response => response.json())
+  .then(response => {
+    console.log(response);
 
-  let trace_lev = {
-      x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00'],
-      y: [0.26, 0.25, 0.23],
-      type: 'scatter',
-      mode: "lines",
-      name: 'Leverage Ratio',
-      line: {color: '#17BECF'}
-    };
+    // Render historical liquidity and leverage charts
+    let li = response.liquidity
+    let le = response.leverage
+    let tr_hqla = 0
+    let tr_la = 0
+    let tr_ila = 0
+    let tr_sd = 0
+    let tr_unsd = 0
+    let tr_syn = 0
+    // Pull info on trade impact
+    // for (let trade=1; trade<=num_pages; page_item++)
+    // response.posts.forEach(post => display_post(post));
+    response.trades.forEach(trade => trade_impact(trade));
 
-  let data_hisTrend = [trace_liq, trace_lev];
-  
-  let layout = { 
-  };
-
-  let config = {responsive: true}
-  
-  Plotly.newPlot('hisTrend', data_hisTrend, layout, config);
-
-  // Render asset composition charts
-  let data_assetComp = [{
-    type: 'funnel', 
-    y: ["Total Asset", "LA and HQLA", "HQLA"], 
-    x: [13873, 2703, 908], 
-    hoverinfo: 'x+percent previous+percent initial',
-    marker: {color: ["59D4E8", "DDB6C6", "94D2E6"]}
-  }];
-
-  let layout_assetComp = {      
-    xaxis: {
-      tickfont: {family: "Lato"}
-    },
-    // autosize: true,
-    showlegend: false
+    function trade_impact(trade) {
+      if (trade.security === "HQLA") {
+        tr_hqla += trade.amount;
+        // li.hqla += tr_hqla;
+      }
+      if (trade.security === "LA") {
+        tr_la += trade.amount;
+        // li.la += tr_la;
+      }
+      if (trade.security === "ILA") {
+        tr_ila += trade.amount;
+        // li.ila += tr_ila;
+      }
+      if (trade.security === "Secured Debt") {
+        tr_sd += trade.amount;
+        // le.secured_debt += tr_sd;
+      }
+      if (trade.security === "Unsecured Debt") {
+        tr_unsd += trade.amount;
+        // le.unsecured_debt += tr_unsd;
+      }
+      if (trade.security === "Synthetics") {
+        tr_syn += trade.amount;
+        // le.synthetics += tr_syn;
+      }
     }
 
-  // let config = {responsive: true}
+    let tot_a = li.hqla + li.la + li.ila + tr_hqla + tr_la + tr_ila
+    let liq_a = li.hqla + li.la + tr_hqla + tr_la
+    let tot_l_start = le.secured_debt + le.unsecured_debt + le.synthetics
+    let tot_l = le.secured_debt + le.unsecured_debt + le.synthetics + tr_sd + tr_unsd + tr_syn
+    let trace_liq = {
+        x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00', Date.now()],
+        y: [1.23, 1.34, 1.27, (liq_a)/li.cash_outflow],
+        type: 'scatter',
+        mode: "lines",
+        name: 'Liquidity Ratio',
+        line: {color: '#7F7F7F'}
+      };
 
-  Plotly.newPlot('assetComp', data_assetComp, layout_assetComp, config);
+    let trace_lev = {
+        x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00', Date.now()],
+        y: [0.26, 0.25, 0.23, (tot_l)/tot_a],
+        type: 'scatter',
+        mode: "lines",
+        name: 'Leverage Ratio',
+        line: {color: '#17BECF'}
+      };
+
+      let lmt_liq = {
+        x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00', Date.now()],
+        y: [1.2, 1.2, 1.2, 1.2],
+        mode: 'lines',
+        name: 'Liquidity Limit',
+        line: {
+          dash: 'dashdot',
+          width: 1,
+          color: '#ec1848'
+        }
+      };
+
+      let lmt_lev = {
+        x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00', Date.now()],
+        y: [0.5, 0.5, 0.5, 0.5],
+        mode: 'lines',
+        name: 'Leverage Limit',
+        line: {
+          dash: 'dashdot',
+          width: 1,
+          color: '#c6ec1d'
+        }
+      };
+
+    let data_hisTrend = [trace_liq, lmt_liq, trace_lev, lmt_lev];
+    
+    let layout = { 
+    };
+
+    let config = {responsive: true}
+    
+    Plotly.newPlot('hisTrend', data_hisTrend, layout, config);
+
+      // Render asset composition charts
+    let data_assetComp = [{
+      type: 'funnel', 
+      y: ["Total Asset", "LA and HQLA", "HQLA"], 
+      x: [tot_a, liq_a, li.hqla + tr_hqla], 
+      hoverinfo: 'x+percent previous+percent initial',
+      marker: {color: ["59D4E8", "DDB6C6", "94D2E6"]}
+    }];
+
+    let layout_assetComp = {      
+      xaxis: {
+        tickfont: {family: "Lato"}
+      },
+      // autosize: true,
+      showlegend: false
+      }
+
+    Plotly.newPlot('assetComp', data_assetComp, layout_assetComp, config);
+
+    // Render liquidity impact chart
+    liqImpact = document.getElementById('liqImpact');
+
+    let data_liq = [
+        {
+            name: "liquidity surplus",
+            type: "waterfall",
+            orientation: "v",
+            measure: [
+                "relative",
+                "relative",
+                "relative",
+                "relative",
+                "total"
+            ],
+            x: [
+                "Starting Surplus",
+                "HQLA",
+                "LA",
+                "Cash Outflow",
+                "Ending Surplus"
+            ],
+            textposition: "inside",
+            text: [
+                `${li.surplus}`,
+                `${tr_hqla}`,
+                `${tr_la}`,
+                "0",
+                `${li.surplus + tr_hqla + tr_la}`
+            ],          
+            y: [
+                li.surplus,
+                tr_hqla,
+                tr_la,
+                0,
+                li.surplus + tr_hqla + tr_la
+            ],
+            connector: {
+              line: {
+                color: "rgba(255, 209, 0, 0.2)"
+              }
+            },
+            decreasing: { marker: { color: "rgba(255, 0, 247, 0.2)", line:{color : "red", width :1}}},
+            increasing: { marker: { color: "rgba(0, 93, 255, 0.2)", line:{color : "green", width :1}} },
+            totals: { marker: { color: "rbga(46, 120, 223, 0.2)", line:{color:'blue',width:1}}}
+          }
+      ];
+      let layout_liq = {
+          title: {
+              text: "<b>Liquidity Surplus Impact</b>",
+              tickfont: {family: "Lato"},
+              titleposition: "top left",
+              xanchor: "right",
+              yanchor: "top",
+              x: 0.55,
+              y: 0.98
+          },
+          xaxis: {
+              tickfont: {family: "Lato"},
+              type: "category"
+          },
+          yaxis: {
+              tickfont: {family: "Lato"},
+              type: "linear",
+              showgrid: false,
+              zeroline: true,
+              showline: false,
+              showticklabels: false
+          },
+          margin: {
+            l: 10,
+            r: 35,
+            b: 70,
+            t: 30,
+            pad: 0
+          },
+          // autosize: true,
+          showlegend: false
+    };
+
+    Plotly.newPlot('liqImpact', data_liq, layout_liq, config);
+
+    // Render leverage impact chart
+    levImpact = document.getElementById('levImpact');
+
+    let data_lev = [
+        {
+            name: "leverage",
+            type: "waterfall",
+            orientation: "v",
+            measure: [
+                "relative",
+                "relative",
+                "relative",
+                "relative",
+                "total"
+            ],
+            x: [
+                "Starting Leverage",
+                "Secured Debt",
+                "Unsecured Debt",
+                "Synthetics",
+                "Ending Leverage"
+            ],
+            textposition: "inside",
+            text: [
+              `${tot_l_start}`,
+              `${tr_sd}`,
+              `${tr_unsd}`,
+              `${tr_syn}`,
+              `${tot_l}`
+            ],          
+            y: [
+                tot_l_start,
+                tr_sd,
+                tr_unsd,
+                tr_syn,
+                tot_l
+            ],
+            connector: {
+              line: {
+                color: "rgba(255, 209, 0, 0.2)"
+              }
+            },
+            decreasing: { marker: { color: "rgba(255, 0, 247, 0.2)", line:{color : "red", width :1}}},
+            increasing: { marker: { color: "rgba(0, 93, 255, 0.2)", line:{color : "green", width :1}} },
+            totals: { marker: { color: "rbga(46, 120, 223, 0.2)", line:{color:'blue',width:1}}}
+          }
+      ];
+    let layout_lev = {
+          title: {
+              text: "<b>Leverage Impact</b>",
+              tickfont: {family: "Lato"},
+              titleposition: "top left",
+              xanchor: "right",
+              yanchor: "top",
+              x: 0.40,
+              y: 0.98
+          },
+          xaxis: {
+              tickfont: {family: "Lato"},
+              type: "category"
+          },
+          yaxis: {
+              tickfont: {family: "Lato"},
+              type: "linear",
+              showgrid: false,
+              zeroline: true,
+              showline: false,
+              showticklabels: false
+          },
+          margin: {
+            l: 10,
+            r: 35,
+            b: 70,
+            t: 30,
+            pad: 0
+          },
+          // autosize: true,
+          showlegend: false
+      };
+
+    Plotly.newPlot('levImpact', data_lev, layout_lev, config);
+
+  });
   
-// Render liquidity impact chart
-liqImpact = document.getElementById('liqImpact');
 
-let data_liq = [
-    {
-        name: "liquidity surplus",
-        type: "waterfall",
-        orientation: "v",
-        measure: [
-            "relative",
-            "relative",
-            "relative",
-            "relative",
-            "total"
-        ],
-        x: [
-            "Starting Surplus",
-            "HQLA",
-            "LA",
-            "Cash Outflow",
-            "Ending Surplus"
-        ],
-        textposition: "inside",
-        text: [
-            "+60",
-            "+80",
-            "-40",
-            "-20",
-            "+80"
-        ],          
-        y: [
-            60,
-            80,
-            -40,
-            -20,
-            0
-        ],
-        connector: {
-          line: {
-            color: "rgba(255, 209, 0, 0.2)"
-          }
-        },
-        decreasing: { marker: { color: "rgba(255, 0, 247, 0.2)", line:{color : "red", width :1}}},
-        increasing: { marker: { color: "rgba(0, 93, 255, 0.2)", line:{color : "green", width :1}} },
-        totals: { marker: { color: "rbga(46, 120, 223, 0.2)", line:{color:'blue',width:1}}}
-      }
-  ];
-  let layout_liq = {
-      title: {
-          text: "<b>Liquidity Surplus Impact</b>",
-          tickfont: {family: "Lato"},
-          titleposition: "top left",
-          xanchor: "right",
-          yanchor: "top",
-          x: 0.55,
-          y: 0.98
-      },
-      xaxis: {
-          tickfont: {family: "Lato"},
-          type: "category"
-      },
-      yaxis: {
-          tickfont: {family: "Lato"},
-          type: "linear",
-          showgrid: false,
-          zeroline: true,
-          showline: false,
-          showticklabels: false
-      },
-      margin: {
-        l: 10,
-        r: 35,
-        b: 70,
-        t: 30,
-        pad: 0
-      },
-      // autosize: true,
-      showlegend: false
-  };
-
-  // let config = {responsive: true}
-
-  Plotly.newPlot('liqImpact', data_liq, layout_liq, config);
-
-// Render leverage impact chart
-levImpact = document.getElementById('levImpact');
-
-let data_lev = [
-    {
-        name: "leverage",
-        type: "waterfall",
-        orientation: "v",
-        measure: [
-            "relative",
-            "relative",
-            "relative",
-            "relative",
-            "total"
-        ],
-        x: [
-            "Starting Leverage",
-            "Secured Debt",
-            "Unsecured Debt",
-            "Synthetics",
-            "Ending Leverage"
-        ],
-        textposition: "inside",
-        text: [
-            "+30",
-            "-20",
-            "+40",
-            "-20",
-            "+30"
-        ],          
-        y: [
-            30,
-            -20,
-            +40,
-            -20,
-            0
-        ],
-        connector: {
-          line: {
-            color: "rgba(255, 209, 0, 0.2)"
-          }
-        },
-        decreasing: { marker: { color: "rgba(255, 0, 247, 0.2)", line:{color : "red", width :1}}},
-        increasing: { marker: { color: "rgba(0, 93, 255, 0.2)", line:{color : "green", width :1}} },
-        totals: { marker: { color: "rbga(46, 120, 223, 0.2)", line:{color:'blue',width:1}}}
-      }
-  ];
-  let layout_lev = {
-      title: {
-          text: "<b>Leverage Impact</b>",
-          tickfont: {family: "Lato"},
-          titleposition: "top left",
-          xanchor: "right",
-          yanchor: "top",
-          x: 0.40,
-          y: 0.98
-      },
-      xaxis: {
-          tickfont: {family: "Lato"},
-          type: "category"
-      },
-      yaxis: {
-          tickfont: {family: "Lato"},
-          type: "linear",
-          showgrid: false,
-          zeroline: true,
-          showline: false,
-          showticklabels: false
-      },
-      margin: {
-        l: 10,
-        r: 35,
-        b: 70,
-        t: 30,
-        pad: 0
-      },
-      // autosize: true,
-      showlegend: false
-  };
-
-  // let config = {responsive: true}
-
-  Plotly.newPlot('levImpact', data_lev, layout_lev, config);
 
 
   // Make sure chart dimension covers article container as chart has its own aspect ratios
@@ -831,8 +903,84 @@ let data_lev = [
   // console.log(grid_group[0].offsetWidth)
   // console.log(grid_group.length)
 
-  // Render leverage impact chart
-  trade_form = document.getElementById('trade-form');
+  // Make sure user can't choose to buy debts
+  let selects = document.getElementsByTagName('select');
+
+  for(let i=0; i<selects.length; i++) {
+        selects[i].onchange = function() {
+          console.log(selects[i].options[selects[i].selectedIndex].text)
+          if(selects[i].options[selects[i].selectedIndex].text === 'Buy') {
+            console.log(1)  
+            for(let j=0; j<selects[i+1].options.length; j++) {
+              console.log(2)
+                if((selects[i+1].options[j].text === 'Secured Debt') || (selects[i+1].options[j].text === 'Unsecured Debt') || (selects[i+1].options[j].text === 'Synthetics')) {
+                  console.log(3)
+                  console.log(selects[i+1].options[j].text);
+                  selects[i+1].options[j].disabled = true;
+                }
+            }
+            
+          }
+          else if((selects[i].options[selects[i].selectedIndex].text === 'Secured Debt') || (selects[i].options[selects[i].selectedIndex].text === 'Unsecured Debt') || (selects[i].options[selects[i].selectedIndex].text === 'Synthetics')) {
+            console.log(1)  
+            for(let j=0; j<selects[i-1].options.length; j++) {
+              console.log(2)
+                if(selects[i-1].options[j].text === 'Buy') {
+                  console.log(3)
+                  console.log(selects[i-1].options[j].text);
+                  selects[i-1].options[j].disabled = true;
+                }
+            }
+            
+          }
+          else if ((selects[i].options[selects[i].selectedIndex].text === 'HQLA') || (selects[i].options[selects[i].selectedIndex].text === 'LA') || (selects[i].options[selects[i].selectedIndex].text === 'ILA') || (selects[i].options[selects[i].selectedIndex].text === '---------')) {
+            for(let j=0; j<selects[i-1].options.length; j++) {
+              console.log(2)
+              console.log(selects[i-1].options[j].text);
+              selects[i-1].options[j].disabled = false;
+            }
+          }
+          else {
+            for(let j=0; j<selects[i+1].options.length; j++) {
+                console.log(2)
+                console.log(selects[i+1].options[j].text);
+                selects[i+1].options[j].disabled = false;
+            }
+          }
+        }
+  }
+
+  // // Increase a trade form when user request
+  let add_form = document.querySelector('#add_form');
+  let num_forms = document.getElementsByTagName('aside');
+
+  add_form.href = `?add=${num_forms.length}`
+//   for(let i=0; i<selects.length; i++) {
+//     selects[i].onchange = function() {
+//       console.log(selects[i].options[selects[i].selectedIndex].text)
+//       if(selects[i].options[selects[i].selectedIndex].text === 'Buy') {
+//         for(let j=0; j<selects.length; j++) {
+//           for(let k=0; k<selects[j].options.length; k++) {
+//             if((selects[j].options[k].text === 'Secured Debt') || (selects[j].options[k].text === 'Unsecured Debt') || (selects[j].options[k].text === 'Synthetics')) {
+//               console.log(selects[j].options[k].text);
+//               selects[j].options[k].disabled = true;
+//             }
+//           }
+//         }
+//       }
+//       else {
+//         for(let j=0; j<selects.length; j++) {
+//           for(let k=0; k<selects[j].options.length; k++) {
+//             if((selects[j].options[k].text === 'Secured Debt') || (selects[j].options[k].text === 'Unsecured Debt') || (selects[j].options[k].text === 'Synthetics')) {
+//               console.log(selects[j].options[k].text);
+//               selects[j].options[k].disabled = false;
+//             }
+//           }
+//         }
+//       }
+//     }
+// }
+  // trade_form = document.getElementById('trade-form');
 
 
 

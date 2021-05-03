@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import JsonResponse
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -10,37 +10,94 @@ from django.utils import timezone
 from django.core.paginator import Paginator
 import json, datetime
 from django.forms import inlineformset_factory
+from django.db.models import Sum, Case, When
 
 
 from .models import User, Post, Profile, Liquidity, Leverage, Trade
 
+assets = ['HQLA', 'LA', 'ILA']
+debts = ['Secured Debt', 'Unsecured Debt', 'Synthetics']
 
 def main_page(request):
     return render(request, "fund/main_page.html")
 
 def scenarios(request):
-    TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"))
+    # Check if additional trade form is asked
+    add_trade_form = request.GET.get("add")
+    if add_trade_form is None:
+        TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), max_num=2)
+    else:
+        TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), extra=int(add_trade_form)+1)
     userid = request.user.id
-    user = User.objects.get(id=userid)
+    if userid:
+        user = User.objects.get(id=userid)
+        extrade = Trade.objects.filter(user=user)
+    else:
+        extrade = []
     formset_empty = TradeFormSet()
-    formset = Trade.objects.filter(user=user)
 
-    # Return message if request is sent via "POST" for creating a new post
+    # Return message if request is sent via "POST" for creating a new trade
     if request.method == "POST":
-        # Create the post
+        # Create the trade
         formset = TradeFormSet(request.POST, instance=user)
+        print(formset)
         if formset.is_valid():
             formset.save()
-        return render(request, "fund/scenarios.html", {
-            "formset":formset
-            })
+        return redirect("scenarios")
+        # return render(request, "fund/scenarios.html", {
+        #     "formset_empty":formset_empty,
+        #     "extrade":extrade
+        #     })
     
     else:
         return render(request, "fund/scenarios.html", {
             "formset_empty":formset_empty,
-            "formset":formset
+            "extrade":extrade
             })
-    return render(request, "fund/scenarios.html")
+    # return render(request, "fund/scenarios.html")
+
+def remove(request, trade_id):
+    TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), max_num=2)
+    userid = request.user.id
+    if userid:
+        user = User.objects.get(id=userid)
+        extrade = Trade.objects.filter(user=user)
+    else:
+        extrade = []
+    formset_empty = TradeFormSet()
+
+    print(request)
+    print(trade_id)
+    user = User.objects.get(id=request.user.id)
+
+    # Get trade information
+    trade_remove = Trade.objects.get(id=trade_id)
+    print(trade_remove)
+
+    trade_remove.delete()
+    
+    return redirect("scenarios")
+
+def remove_all(request):
+    TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), max_num=2)
+    userid = request.user.id
+    if userid:
+        user = User.objects.get(id=userid)
+        extrade = Trade.objects.filter(user=user)
+    else:
+        extrade = []
+    formset_empty = TradeFormSet()
+
+    print(request)
+    user = User.objects.get(id=request.user.id)
+
+    # Get trade information
+    trade_remove = Trade.objects.filter(user=user).all()
+    print(trade_remove)
+
+    trade_remove.delete()
+    
+    return redirect("scenarios")
 
 def saved(request):
     return render(request, "fund/saved.html")
@@ -96,6 +153,10 @@ def register(request):
                 "message": "Username already taken."
             })
         login(request, user)
+        liquidity = Liquidity.objects.create(user=user)
+        leverage = Leverage.objects.create(user=user)
+        liquidity.save()
+        leverage.save()
         return HttpResponseRedirect(reverse("scenarios"))
     else:
         return render(request, "fund/register.html")
@@ -279,3 +340,46 @@ def create_trade(request):
         return render(request, "fund/scenarios.html", {
             "formset":formset
             })
+
+# Function to load chart 1 info
+def charts(request):
+
+    user = User.objects.get(id=request.user.id)
+    # Get liquidity information
+    liquidity = Liquidity.objects.get(user=user)
+
+    # Get leverage information
+    leverage = Leverage.objects.get(user=user)
+
+    # Get trade information
+    trade = Trade.objects.filter(user=user).all()
+    # result = trade.annotate(
+    #     amount=Case(
+    #         When(transaction='Buy', then=("amount")),
+    #         When(transaction='Sell', then=-("amount"))
+    #     ),
+    # ).values_list('transaction','security','amount')
+
+    # Flag correct signs for asset and leverage items
+    trade = trade.values('security','transaction').order_by('security','transaction').annotate(amount=Sum('amount'))
+
+    for result in trade:
+        if result['security'] in assets:
+            if result['transaction'] == 'Buy':
+                result['amount'] = result['amount'] * 1
+            elif result['transaction'] == 'Sell':
+                result['amount'] = result['amount'] * -1
+        elif result['security'] in debts:
+            if result['transaction'] == 'Buy':
+                result['amount'] = result['amount'] * -1
+            elif result['transaction'] == 'Sell':
+                result['amount'] = result['amount'] * 1
+
+    # Return all info in JSON
+    return JsonResponse({
+        "liquidity": liquidity.serialize(request.user),
+        "leverage": leverage.serialize(request.user),
+        # "posts": [post.serialize(request.user) for post in page_obj]
+        "trades": [trade for trade in trade]
+        }
+        ,safe=False)
