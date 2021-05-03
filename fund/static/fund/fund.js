@@ -646,13 +646,20 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
+    const lmt_liq_y = 1.2;
+    const lmt_lev_y = 0.5;
+    const root = document.querySelector(':root');
+    const his_chart = document.getElementById('hisTrend');
     let tot_a = li.hqla + li.la + li.ila + tr_hqla + tr_la + tr_ila
     let liq_a = li.hqla + li.la + tr_hqla + tr_la
     let tot_l_start = le.secured_debt + le.unsecured_debt + le.synthetics
     let tot_l = le.secured_debt + le.unsecured_debt + le.synthetics + tr_sd + tr_unsd + tr_syn
+    let liq_ratio = (liq_a)/li.cash_outflow;
+    let lev_ratio = (tot_l)/tot_a;
+
     let trace_liq = {
         x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00', Date.now()],
-        y: [1.23, 1.34, 1.27, (liq_a)/li.cash_outflow],
+        y: [1.23, 1.34, 1.27, liq_ratio],
         type: 'scatter',
         mode: "lines",
         name: 'Liquidity Ratio',
@@ -661,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let trace_lev = {
         x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00', Date.now()],
-        y: [0.26, 0.25, 0.23, (tot_l)/tot_a],
+        y: [0.26, 0.25, 0.23, lev_ratio],
         type: 'scatter',
         mode: "lines",
         name: 'Leverage Ratio',
@@ -670,7 +677,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       let lmt_liq = {
         x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00', Date.now()],
-        y: [1.2, 1.2, 1.2, 1.2],
+        y: [lmt_liq_y, lmt_liq_y, lmt_liq_y, lmt_liq_y],
         mode: 'lines',
         name: 'Liquidity Limit',
         line: {
@@ -682,7 +689,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       let lmt_lev = {
         x: ['2021-02-01 00:00:00', '2021-03-01 00:00:00', '2021-04-01 00:00:00', Date.now()],
-        y: [0.5, 0.5, 0.5, 0.5],
+        y: [lmt_lev_y, lmt_lev_y, lmt_lev_y, lmt_lev_y],
         mode: 'lines',
         name: 'Leverage Limit',
         line: {
@@ -701,7 +708,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     Plotly.newPlot('hisTrend', data_hisTrend, layout, config);
 
-      // Render asset composition charts
+    // Send alert and set background color to warning if trades cause breaching the limit
+    if (liq_ratio < lmt_liq_y) {
+      alert("Caution: Fund liquidity limits have been breached!");
+      root.style.setProperty('--page-content-bgColor', '#f44336');
+      his_chart.style.animation = 'shake 0.5s 5';
+    }
+    else if (lev_ratio > lmt_lev_y) {
+      alert("Caution: Fund leverage limits have been breached!");
+      root.style.setProperty('--page-content-bgColor', '#f44336');
+      his_chart.style.animation = 'shake 0.5s 5';
+    }
+    else {
+      root.style.setProperty('--page-content-bgColor', '#f0f1f6');
+    }
+
+    // Render asset composition charts
     let data_assetComp = [{
       type: 'funnel', 
       y: ["Total Asset", "LA and HQLA", "HQLA"], 
@@ -908,26 +930,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
   for(let i=0; i<selects.length; i++) {
         selects[i].onchange = function() {
-          console.log(selects[i].options[selects[i].selectedIndex].text)
+          // console.log(selects[i].options[selects[i].selectedIndex].text)
           if(selects[i].options[selects[i].selectedIndex].text === 'Buy') {
-            console.log(1)  
+            // console.log(1)  
             for(let j=0; j<selects[i+1].options.length; j++) {
-              console.log(2)
+              // console.log(2)
                 if((selects[i+1].options[j].text === 'Secured Debt') || (selects[i+1].options[j].text === 'Unsecured Debt') || (selects[i+1].options[j].text === 'Synthetics')) {
-                  console.log(3)
-                  console.log(selects[i+1].options[j].text);
+                  // console.log(3)
+                  // console.log(selects[i+1].options[j].text);
                   selects[i+1].options[j].disabled = true;
                 }
             }
             
           }
           else if((selects[i].options[selects[i].selectedIndex].text === 'Secured Debt') || (selects[i].options[selects[i].selectedIndex].text === 'Unsecured Debt') || (selects[i].options[selects[i].selectedIndex].text === 'Synthetics')) {
-            console.log(1)  
+            // console.log(1)  
             for(let j=0; j<selects[i-1].options.length; j++) {
-              console.log(2)
+              // console.log(2)
                 if(selects[i-1].options[j].text === 'Buy') {
-                  console.log(3)
-                  console.log(selects[i-1].options[j].text);
+                  // console.log(3)
+                  // console.log(selects[i-1].options[j].text);
                   selects[i-1].options[j].disabled = true;
                 }
             }
@@ -935,26 +957,85 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           else if ((selects[i].options[selects[i].selectedIndex].text === 'HQLA') || (selects[i].options[selects[i].selectedIndex].text === 'LA') || (selects[i].options[selects[i].selectedIndex].text === 'ILA') || (selects[i].options[selects[i].selectedIndex].text === '---------')) {
             for(let j=0; j<selects[i-1].options.length; j++) {
-              console.log(2)
-              console.log(selects[i-1].options[j].text);
+              // console.log(2)
+              // console.log(selects[i-1].options[j].text);
               selects[i-1].options[j].disabled = false;
             }
           }
           else {
             for(let j=0; j<selects[i+1].options.length; j++) {
-                console.log(2)
-                console.log(selects[i+1].options[j].text);
+                // console.log(2)
+                // console.log(selects[i+1].options[j].text);
                 selects[i+1].options[j].disabled = false;
             }
           }
         }
   }
 
-  // // Increase a trade form when user request
+  let formset = document.getElementsByClassName('formset');
+
+  // Build a div for warning message but hide it by default
+  let message_text = "Please ensure Buy and Sell amount offset one another before submitting!"
+  const button_wrapper = document.getElementById('button-wrapper');
+  const submit_form = document.getElementById('submit-form');
+  const message = document.createElement('div')
+  message.className = "message";
+  message.innerHTML = message_text;
+
+  button_wrapper.appendChild(message);
+  message.style.display = "none";
+
+  // Make sure total Buy amount offsets total Sell amount
+  for(let i=0; i<formset.length; i++) {
+    formset[i].onchange = function() {
+      let cum_amount = 0;
+      console.log(formset[i].children[2].value);
+      console.log(formset[i].children[6].value);
+      for (let j=0; j<formset.length; j++) {
+        if (formset[j].children[2].value === 'Buy') {
+          cum_amount += Number(formset[j].children[6].value);
+        }
+        else if(formset[j].children[2].value === 'Sell') {
+          cum_amount -= Number(formset[j].children[6].value);
+        }
+      }
+      console.log(cum_amount)
+      if (cum_amount !== 0) {
+        console.log("Amounts must offset!")
+        // Render the warning message
+        message.style.display = "block";
+        // Disable submit button
+        submit_form.disabled = true;
+        // Disappear on change
+      }
+      else if (cum_amount === 0) {
+        // Hide the warning message
+        message.style.display = "none";
+        // Enable submit button
+        submit_form.disabled = false;
+      }
+    }
+  }
+
+  // Ensure buy amount offset sell amount in formset submitted
+  document.querySelector('#submit-form').addEventListener('click', () => check_amount_offsets())
+
+  function check_amount_offsets() {
+    let formset = document.getElementsByClassName('formset');
+    console.log(formset);
+
+
+  }
+
+
+
+  // Increase a trade form when user request
   let add_form = document.querySelector('#add_form');
   let num_forms = document.getElementsByTagName('aside');
 
   add_form.href = `?add=${num_forms.length}`
+
+
 //   for(let i=0; i<selects.length; i++) {
 //     selects[i].onchange = function() {
 //       console.log(selects[i].options[selects[i].selectedIndex].text)

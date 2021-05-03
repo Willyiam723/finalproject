@@ -37,13 +37,15 @@
                             {{formset_empty.management_form}}
                             
                             {% for form in formset_empty %}
-                                <aside id="num_forms"> {{ forloop.counter }}</aside>
-                                {{form}}
+                                <div class="formset">
+                                    <aside id="num_forms"> {{ forloop.counter }}</aside>
+                                    {{form}}
+                                </div>
                                 <hr>
                             {% endfor %}
-                            <div class="button-wrapper">
+                            <div id="button-wrapper">
                                 <a id="add_form" href="#" class="btn btn-sm btn-info" name="Add">Add Trade</a>
-                                <input type="submit" class="btn btn-sm btn-primary" name="Submit">
+                                <input id="submit-form" type="submit" class="btn btn-sm btn-primary" name="Submit">
                             </div>
                         </form>
                 </div>

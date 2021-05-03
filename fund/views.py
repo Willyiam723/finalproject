@@ -25,9 +25,9 @@ def scenarios(request):
     # Check if additional trade form is asked
     add_trade_form = request.GET.get("add")
     if add_trade_form is None:
-        TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), max_num=2)
+        TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), can_delete = False, max_num=2)
     else:
-        TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), extra=int(add_trade_form)+1)
+        TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), can_delete = False, extra=int(add_trade_form)+1)
     userid = request.user.id
     if userid:
         user = User.objects.get(id=userid)
