@@ -83,7 +83,7 @@ def remove_all(request):
     userid = request.user.id
     if userid:
         user = User.objects.get(id=userid)
-        extrade = Trade.objects.filter(user=user)
+        extrade = Trade.objects.filter(user=user).all()
     else:
         extrade = []
     formset_empty = TradeFormSet()
@@ -169,7 +169,11 @@ def create_post(request):
     if request.method == "POST":
         # Create the post
         data = json.loads(request.body)
+        trade_ids = data.get("trade_ids", "")
         content = data.get("content", "")
+        print(data)
+        print(trade_ids)
+        print(content)
         date_time = timezone.now()
         user = request.user.id
         post = Post(
@@ -178,21 +182,41 @@ def create_post(request):
             user_id=user
         )
         post.save()
-        return JsonResponse({"message": "Post published successfully."})
+
+        # Add trades
+        for trade_id in trade_ids:
+            trade = Trade.objects.get(id=trade_id)
+            print(trade)
+            post.trade.add(trade)
+
+        return JsonResponse({"message": "Post published successfully.", "post_id": post.id})
     # Return true if request is sent via "PUT" for updating an existing post
     elif request.method == "PUT":
         # Update the post
         data = json.loads(request.body)
-        post_id = int(data["id"])
-        content = data["content"]
+        post_id = int(data["post_id"])
+        publish_post = data["publish_post"]
         post = Post.objects.get(id=post_id)
+        print(post_id)
+        print(publish_post)
         
-        # Enable back-end double check to ensure user is editing his/her own post
+        # Enable back-end check to ensure user is updating his/her own scenario post
         if post.user_id != request.user.id:
             return HttpResponse(status = 401)
-        post.content = content
+        if (publish_post == "Publish") & (post.publish == False):
+            post.publish = True
+        elif (publish_post == "Unpublish") & (post.publish == True):
+            post.publish = False
+        else:
+            return JsonResponse({"error": "Database not synchronized with web display."}, status = 400)
+
         post.save()
-        return JsonResponse({"result": True}, status = 200)
+        if publish_post == "Publish":
+            publish_post = "Unpublish"
+        else:
+            publish_post = "Publish"
+        print(publish_post)
+        return JsonResponse({"message": "Post updated successfully.", "publish_post": publish_post})
     else:
         return JsonResponse({"error": "POST or PUT requests required."}, status = 400)
 

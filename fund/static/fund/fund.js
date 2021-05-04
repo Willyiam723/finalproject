@@ -978,7 +978,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let message_text = "Please ensure Buy and Sell amount offset one another before submitting!"
   const button_wrapper = document.getElementById('button-wrapper');
   const submit_form = document.getElementById('submit-form');
-  const message = document.createElement('div')
+  const message = document.createElement('div');
   message.className = "message";
   message.innerHTML = message_text;
 
@@ -1023,11 +1023,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function check_amount_offsets() {
     let formset = document.getElementsByClassName('formset');
     console.log(formset);
-
-
   }
-
-
 
   // Increase a trade form when user request
   let add_form = document.querySelector('#add_form');
@@ -1035,6 +1031,94 @@ document.addEventListener('DOMContentLoaded', function() {
 
   add_form.href = `?add=${num_forms.length}`
 
+  // Create a scenario post when save button is clicked
+  document.querySelector('#save-post').addEventListener('click', () => create_post());
+  
+  // Function to create a new scenario post
+  function create_post() {
+
+    // Retrieve post information while setting fixed variables as const
+    const extrades = document.getElementsByClassName('extrades');
+    const content = document.getElementById('scenario_content').value;
+    let trade_ids = []
+
+    // Extract trade id from extrades
+    for(let i=0; i<extrades.length; i++) {
+      if (i === extrades.length - 1) {
+        trade_ids += `${extrades[i].innerHTML}`;
+      }
+      else {
+        trade_ids += `${extrades[i].innerHTML},`;
+      }
+    }
+
+    trade_ids = trade_ids.split(',');
+    
+    // Create post information
+    fetch('/create_post', {
+      method: 'POST',
+      // Send Django CSRF Token
+      headers:{
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+          trade_ids: trade_ids,
+          content: content
+      })
+    })
+    .then(response => response.json())
+    .then(result => {
+      // Print result
+      console.log(result);
+      // Reset value of the form
+      // document.getElementById('scenario_content').value = '';
+      document.getElementById('publish-post').hidden = false;
+      const post_id = document.createElement('div');
+      post_id.id = "post-id";
+      post_id.innerHTML = result.post_id;
+      const button_wrapper_header = document.getElementById('button-wrapper-header');
+      button_wrapper_header.append(post_id);
+      post_id.style.display = "none";
+    });
+  }
+
+  // Update a scenario post when publish button is clicked
+  document.querySelector('#publish-post').addEventListener('click', () => publish_post());
+  
+  // Function to update publishing
+  function publish_post() {
+
+    // Retrieve post information while setting fixed variables as const
+    const post_id = document.getElementById('post-id').innerHTML;
+    let publish_post = document.getElementById('publish-post').innerHTML;
+
+    console.log(post_id);
+    console.log(publish_post);
+    
+    // Update post information
+    fetch('/create_post', {
+      method: 'PUT',
+      // Send Django CSRF Token
+      headers:{
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+          post_id: post_id,
+          publish_post: publish_post
+      })
+    })
+    .then(response => response.json())
+    .then(result => {
+        // Print result
+        console.log(result);
+      // Reset value of the form
+      document.getElementById('publish-post').innerHTML = result.publish_post;
+
+    });
+  } 
+
+});
+  // console.log(`${extrade}`);
 
 //   for(let i=0; i<selects.length; i++) {
 //     selects[i].onchange = function() {
@@ -1065,7 +1149,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-});
+
 
 // Function to create a new trade
 // function create_trade() {

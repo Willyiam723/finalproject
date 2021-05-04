@@ -26,7 +26,7 @@
         <article class="grid-group">
             <div class="grid-cell">
                 <div class="trade-form-wrapper">
-                    <div class="trade-form">Trade</div>
+                    <div class="trade-form">Trades</div>
                             {% comment %} <tr>
                                 <th>Transaction</th>
                                 <th>Security</th>
@@ -44,7 +44,7 @@
                                 <hr>
                             {% endfor %}
                             <div id="button-wrapper">
-                                <a id="add_form" href="#" class="btn btn-sm btn-info" name="Add">Add Trade</a>
+                                <a id="add_form" href="#" class="btn btn-sm btn-info" name="Add">Add A Trade Slot</a>
                                 <input id="submit-form" type="submit" class="btn btn-sm btn-primary" name="Submit">
                             </div>
                         </form>
@@ -54,36 +54,38 @@
         <article class="grid-group">
             <div class="grid-cell">
                 <div class="effective-trades">
-                    <div>Effective Trades</div>
-                    {% comment %} <form action="{% url 'scenarios' %}" method="POST"> {% endcomment %}
-                        {% comment %} {% csrf_token %} {% endcomment %}
-                        {% comment %} {{formset.management_form}} {% endcomment %}
-                        <table class="table table-sm">
-                            <tr>
-                                <th>Transaction</th>
-                                <th>Security</th>
-                                <th>Amount</th>
-                                <th>
-                                    <a href="{% url 'remove_all' %}" class="btn btn-sm btn-danger"><strong>Delete All</strong></a>
-                                </th>
-                            </tr>
+                    <div id="button-wrapper-header">
+                        <div>Effective Trades</div>
+                        <a id="save-post" href="#" class="btn btn-sm btn-success" name="save-post">Save Scenario</a>
+                        <a hidden id="publish-post" href="#" class="btn btn-sm btn-primary" name="publish-post">Publish</a>
+                    </div>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Transaction</th>
+                            <th>Security</th>
+                            <th>Amount</th>
+                            <th>
+                                <a href="{% url 'remove_all' %}" class="btn btn-sm btn-danger"><strong>Delete All</strong></a>
+                            </th>
+                        </tr>
 
-                            {% for trade in extrade %}
-                            <tr>
-                                <td>{{trade.transaction}}</td>
-                                <td>{{trade.security}}</td>
-                                <td>{{trade.amount}}</td>
-                                <td>
-                                    <a href="{% url 'remove' trade.id %}" class="btn btn-sm btn-warning">Remove</a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-
-			            </table> 
-                            {% comment %} <hr> {% endcomment %}
-                        {% comment %} {% endfor %} {% endcomment %}
-				        {% comment %} <input type="submit" class="btn btn-sm btn-info" name="Submit"> {% endcomment %}
-			        {% comment %} </form> {% endcomment %}
+                        {% for trade in extrade %}
+                        <tr>
+                            <td>{{trade.transaction}}</td>
+                            <td>{{trade.security}}</td>
+                            <td>{{trade.amount}}</td>
+                            <td>
+                                <a href="{% url 'remove' trade.id %}" class="btn btn-sm btn-warning">Remove</a>
+                            </td>
+                            <td class="extrades" hidden>{{trade.id}}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                    <textarea id="scenario_content" placeholder="Enter description for the scenario"></textarea>
+                        {% comment %} <hr> {% endcomment %}
+                    {% comment %} {% endfor %} {% endcomment %}
+                    {% comment %} <input type="submit" class="btn btn-sm btn-info" name="Submit"> {% endcomment %}
+                {% comment %} </form> {% endcomment %}
                 </div>
             </div>
         </article>

@@ -5,13 +5,40 @@ from django.db import models
 class User(AbstractUser):
     pass
 
+class Trade(models.Model):
+    CODE = (
+        ("Buy", "Buy"),
+        ("Sell", "Sell")
+    )
+    CLASSIFICATION = (
+        ("HQLA", "HQLA"),
+        ("LA", "LA"),
+        ("ILA", "ILA"),
+        ("Secured Debt", "Secured Debt"),
+        ("Unsecured Debt", "Unsecured Debt"),
+        ("Synthetics", "Synthetics")
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trade_user')
+    transaction = models.CharField(max_length=50, choices=CODE)
+    security = models.CharField(max_length=50, choices=CLASSIFICATION)
+    amount = models.FloatField()
+
+    def serialize(self, user):
+        return {
+            "tradeid": self.id,
+            "userid": self.user.id,
+            "transaction": self.transaction,
+            "security": self.security,
+            "amount": self.amount
+        }
 
 class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_user')
     content = models.CharField(max_length=6400)
     date_time = models.DateTimeField()
     like = models.ManyToManyField(User, blank=True, related_name='liking')
-    # trade = models.ForeignKey(Trade, on_delete=models.CASCADE, related_name='trade_post')
+    trade = models.ManyToManyField(Trade, blank=True, related_name='trade_post')
+    publish = models.BooleanField(default=False)
 
     def serialize(self,user,trade):
         return {
@@ -21,9 +48,10 @@ class Post(models.Model):
             "content": self.content,
             "date_time": self.date_time,
             "num_like": self.like.count(),
-            # "tradeid": self.trade.id,
+            "tradeid": self.trade.id,
             "already_like": not user.is_anonymous and self in user.liking.all(),
-            "eligible_like": not user.is_anonymous
+            "eligible_like": not user.is_anonymous,
+            "publish": self.publish
         }
 
     def __str__(self):
@@ -77,31 +105,4 @@ class Leverage(models.Model):
             "unsecured_debt": self.unsecured_debt,
             "synthetics": self.synthetics,
             "leverage": self.secured_debt + self.unsecured_debt + self.synthetics
-        }
-
-class Trade(models.Model):
-    CODE = (
-        ("Buy", "Buy"),
-        ("Sell", "Sell")
-    )
-    CLASSIFICATION = (
-        ("HQLA", "HQLA"),
-        ("LA", "LA"),
-        ("ILA", "ILA"),
-        ("Secured Debt", "Secured Debt"),
-        ("Unsecured Debt", "Unsecured Debt"),
-        ("Synthetics", "Synthetics")
-    )
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trade_user')
-    transaction = models.CharField(max_length=50, choices=CODE)
-    security = models.CharField(max_length=50, choices=CLASSIFICATION)
-    amount = models.FloatField()
-
-    def serialize(self, user):
-        return {
-            "tradeid": self.id,
-            "userid": self.user.id,
-            "transaction": self.transaction,
-            "security": self.security,
-            "amount": self.amount
         }

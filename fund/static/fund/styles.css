@@ -479,6 +479,7 @@ strong {
 
 .trade-form {
   display: flex;
+  font-weight: bold;
   /* flex-direction: column; */
   /* grid-auto-rows: minmax(300px, auto); */
 }
@@ -499,14 +500,31 @@ strong {
   justify-content: space-around;
 }
 
+#button-wrapper-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
 .message {
   padding: 20px;
   background-color:#ff9800;
   color: white;
 }
+
  .add_form {
    padding: 20px;
+   margin: auto;
  }
+
+#save-post {
+  margin: auto;
+}
+
+#publish-post {
+  margin: auto;
+}
 
 /* .grid-cell > div {
   display:grid;
