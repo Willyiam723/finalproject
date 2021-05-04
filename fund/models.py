@@ -48,14 +48,26 @@ class Post(models.Model):
             "content": self.content,
             "date_time": self.date_time,
             "num_like": self.like.count(),
-            "tradeid": self.trade.id,
+            "num_trade": self.trade.count(),
+            # "trade_transaction": self.trade.transaction,
+            # "trade_security": self.trade.security,
+            # "trade_amount": self.trade.amount,
             "already_like": not user.is_anonymous and self in user.liking.all(),
             "eligible_like": not user.is_anonymous,
             "publish": self.publish
         }
+    
+    def trades_id_list(self):
+        trades_str = ""
+        for trade in self.trade.all():
+            trades_str+=" "+ str(trade.id)
+        return f"{trades_str},"
 
     def __str__(self):
-        return f"{self.user} posted {self.content} on {self.date_time} with {self.like.count()} likes"
+        trades_str = ""
+        for trade in self.trade.all():
+            trades_str+=" "+ str(trade.id)
+        return f"{self.user} posted {self.content} on {self.date_time} had trade ids: {trades_str}, with {self.like.count()} likes"
 
 class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='follow_user')

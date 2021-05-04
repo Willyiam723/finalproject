@@ -24,6 +24,8 @@ def main_page(request):
 def scenarios(request):
     # Check if additional trade form is asked
     add_trade_form = request.GET.get("add")
+    postid = request.GET.get("postid")
+    print(postid)
     if add_trade_form is None:
         TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), can_delete = False, max_num=2)
     else:
@@ -31,7 +33,19 @@ def scenarios(request):
     userid = request.user.id
     if userid:
         user = User.objects.get(id=userid)
-        extrade = Trade.objects.filter(user=user)
+        # Get post information
+        if postid:
+            # following_user = User.objects.filter(id__in=request.user.following.all()).all()
+            # # Get post information
+            # posts = Post.objects.filter(user__in=following_user).all()
+
+            # trades = Trade.objects.filter(id__in=)
+            post = Post.objects.get(id=postid)
+            # print(post.trade.trade_post.all())
+            extrade = post.trade.all()
+            print(extrade)
+        else:
+            extrade = Trade.objects.filter(user=user)
     else:
         extrade = []
     formset_empty = TradeFormSet()
@@ -100,6 +114,13 @@ def remove_all(request):
     return redirect("scenarios")
 
 def saved(request):
+    # # Get all post information
+    # posts = Post.objects.filter(user_id=request.user.id)
+
+    # # Return posts in reverse chronologial order in terms of time posted
+    # posts = posts.order_by("-date_time").all()
+
+    # return paginator(request, posts, page)
     return render(request, "fund/saved.html")
 
 def shared(request):
@@ -221,26 +242,15 @@ def create_post(request):
         return JsonResponse({"error": "POST or PUT requests required."}, status = 400)
 
 # Function to load all posts
-def load_posts(request, filter, page):
+def load_posts(request, page):
 
-    filter = int(filter)
-    # Get all post information
-    if filter == 0:
-        posts = Post.objects.all()
-    else:
-        posts = Post.objects.filter(user_id=filter)
-
-    # Return posts in reverse chronologial order in terms of time posted
-    posts = posts.order_by("-date_time").all()
-
-    return paginator(request, posts, page)
-
-# Function to load following posts
-def load_following_posts(request, page):
-
-    following_user = User.objects.filter(id__in=request.user.following.all()).all()
-    # Get post information
-    posts = Post.objects.filter(user__in=following_user).all()
+    # filter = int(filter)
+    # # Get all post information
+    # if filter == 0:
+    #     posts = Post.objects.all()
+    # else:
+    posts = Post.objects.filter(user_id=request.user.id)
+    print(posts)
 
     # Return posts in reverse chronologial order in terms of time posted
     posts = posts.order_by("-date_time").all()
@@ -256,12 +266,34 @@ def paginator(request, posts, page):
     page_number = page
     page_obj = paginator.get_page(page_number)
 
+    # # Get trades information for the post
+    trade = Trade.objects.filter(user=request.user).all()
+    # trade_ids = post.trades_id_list() for post in posts
+    # print(trade_ids)
+
+    # print(posts.serialize(request.user))
+    print(post.serialize(request.user) for post in page_obj)
+
     # Return post information
     return JsonResponse({
-        "posts": [post.serialize(request.user) for post in page_obj],
+        "posts": [post.serialize(request.user, trade) for post in page_obj],
         "num_pages": paginator.num_pages
         }
         ,safe=False)
+
+# Function to load following posts
+def load_following_posts(request, page):
+
+    following_user = User.objects.filter(id__in=request.user.following.all()).all()
+    # Get post information
+    posts = Post.objects.filter(user__in=following_user).all()
+
+    # Return posts in reverse chronologial order in terms of time posted
+    posts = posts.order_by("-date_time").all()
+
+    return paginator(request, posts, page)
+
+
 
 # Function to load profile page
 def load_profile(request, userid):
@@ -320,6 +352,7 @@ def like_unlike(request):
     # Get post and user information
     post = Post.objects.get(id=post_id)
     user = User.objects.get(id=user_id)
+    trade = Trade.objects.filter(user=request.user)
     
     # Like the post if not yet liked, or unlike the post if already liking
     if post in user.liking.all():
@@ -330,7 +363,7 @@ def like_unlike(request):
         print(f"{user} is not yet liking {post.user.username} but now liked")
 
     # Return post information
-    return JsonResponse(post.serialize(request.user))
+    return JsonResponse(post.serialize(request.user, trade))
 
 # Function to create or update a trade set
 @login_required
@@ -365,7 +398,7 @@ def create_trade(request):
             "formset":formset
             })
 
-# Function to load chart 1 info
+# Function to load charts info
 def charts(request):
 
     user = User.objects.get(id=request.user.id)
@@ -407,3 +440,52 @@ def charts(request):
         "trades": [trade for trade in trade]
         }
         ,safe=False)
+
+
+# Function to load charts info
+def charts_post(request, postid):
+
+    user = User.objects.get(id=request.user.id)
+    # Get liquidity information
+    liquidity = Liquidity.objects.get(user=user)
+
+    # Get leverage information
+    leverage = Leverage.objects.get(user=user)
+
+    # Get post information
+    post = Post.objects.get(id=postid)
+
+    # Get trade information
+    trade = post.trade.all()
+
+    # result = trade.annotate(
+    #     amount=Case(
+    #         When(transaction='Buy', then=("amount")),
+    #         When(transaction='Sell', then=-("amount"))
+    #     ),
+    # ).values_list('transaction','security','amount')
+
+    # Flag correct signs for asset and leverage items
+    trade = trade.values('security','transaction').order_by('security','transaction').annotate(amount=Sum('amount'))
+
+    for result in trade:
+        if result['security'] in assets:
+            if result['transaction'] == 'Buy':
+                result['amount'] = result['amount'] * 1
+            elif result['transaction'] == 'Sell':
+                result['amount'] = result['amount'] * -1
+        elif result['security'] in debts:
+            if result['transaction'] == 'Buy':
+                result['amount'] = result['amount'] * -1
+            elif result['transaction'] == 'Sell':
+                result['amount'] = result['amount'] * 1
+
+    # Return all info in JSON
+    return JsonResponse({
+        "liquidity": liquidity.serialize(request.user),
+        "leverage": leverage.serialize(request.user),
+        # "posts": [post.serialize(request.user) for post in page_obj]
+        "trades": [trade for trade in trade]
+        }
+        ,safe=False)
+
