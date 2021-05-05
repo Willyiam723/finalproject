@@ -606,6 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let add_form = document.querySelector('#add_form');
     let num_forms = document.getElementsByTagName('aside');
     let scenarios = document.querySelector('#scenarios');
+    let postid = "";
 
     if (window.location.href.includes("?")) {
       let split_str_0 = window.location.href.split('?')[0];
@@ -617,15 +618,35 @@ document.addEventListener('DOMContentLoaded', function() {
       add_form.href = window.location.href + `?add=${num_forms.length}`;
     }
     
-    
-    let postid = Number(window.location.href.split('postid=')[1]);
+    postid = Number(window.location.href.split('postid=')[1]);
+    if (isNaN(postid )) {
+      postid = "";
+    }
+
     if (document.querySelector('#post-id')) {
-      postid = getElementById('#post-id').innerHTML;
+      postid = document.getElementById('#post-id').innerHTML;
       scenarios.innerHTML = `?postid=${postid}`;
       add_form.href = `?add=${num_forms.length}&postid=${postid}`;
     }
 
-    console.log(postid);
+    if (window.location.href.includes("postid=")) {
+      let remove_button = document.getElementsByClassName("btn btn-sm btn-warning");
+      let trade_ids = document.getElementsByClassName("extrades");
+      let form = document.getElementById("form");
+      form.action = `?postid=${postid}`;
+      console.log(trade_ids);
+      remove_button.innerHTML = "Remove from Post";
+      for (let i=0; i < remove_button.length; i++) {
+        remove_button[i].innerHTML = "Remove from Post";
+        remove_button[i].href = `remove_from_post/${postid}/${trade_ids[i].innerHTML}`;
+        console.log(trade_ids[i]);
+      }
+      let delete_all_button = document.getElementById('delete-all-button');
+      delete_all_button.innerHTML = "Clear all from Post";
+      delete_all_button.href = `clear_all_from_post/${postid}`;
+    }
+
+    // console.log(postid);
 
     // Get posts information
     fetch(`charts/${postid}`)

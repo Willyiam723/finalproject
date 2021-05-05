@@ -54,9 +54,18 @@ def scenarios(request):
     if request.method == "POST":
         # Create the trade
         formset = TradeFormSet(request.POST, instance=user)
-        print(formset)
         if formset.is_valid():
             formset.save()
+
+            # Add trades created to the post
+            trades = Trade.objects.filter(user=user)
+
+            # Track the trades just created
+            trades = trades.order_by("-id")[:int(request.POST['trade_user-TOTAL_FORMS'])]
+            if postid:
+                for trade in trades:
+                    post.trade.add(trade)
+                return redirect('/?postid={}'.format(postid))
         return redirect("scenarios")
         # return render(request, "fund/scenarios.html", {
         #     "formset_empty":formset_empty,
@@ -112,6 +121,29 @@ def remove_all(request):
     trade_remove.delete()
     
     return redirect("scenarios")
+
+def remove_from_post(request, post_id, trade_id):
+
+    # Get post and trade information
+    post = Post.objects.get(id=post_id)
+    trade = Trade.objects.get(id=trade_id)
+    
+    # remove the trade from post
+    post.trade.remove(trade)
+
+    return redirect('/?postid={}'.format(post_id))
+
+def clear_all_from_post(request, post_id):
+    
+    # Get post information
+    post = Post.objects.get(id=post_id)
+    trades = Trade.objects.all()
+    
+    # remove the trade from post
+    for trade in trades:
+        post.trade.remove(trade)
+    
+    return redirect('/?postid={}'.format(post_id))
 
 def saved(request):
     # # Get all post information

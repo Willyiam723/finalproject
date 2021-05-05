@@ -21,5 +21,7 @@ urlpatterns = [
     path("charts/<int:postid>", views.charts_post, name="charts_post"),
     path("charts/", views.charts, name="charts"),
     path("remove/<int:trade_id>", views.remove, name="remove"),
-    path("remove_all/", views.remove_all, name="remove_all")
+    path("remove_all/", views.remove_all, name="remove_all"),
+    path("remove_from_post/<int:post_id>/<int:trade_id>", views.remove_from_post, name="remove_from_post"),
+    path("clear_all_from_post/<int:post_id>", views.clear_all_from_post, name="clear_all_from_post")
 ]

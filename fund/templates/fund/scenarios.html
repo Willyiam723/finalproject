@@ -33,7 +33,7 @@
                                 <th>Security</th>
                                 <th>Amount</th>
                             </tr> {% endcomment %}
-                        <form class="form" action="{% url 'scenarios' %}" method="POST">
+                        <form id="form" class="form" action="{% url 'scenarios' %}" method="POST">
                             {% csrf_token %}
                             {{formset_empty.management_form}}
                             
@@ -66,7 +66,7 @@
                             <th>Security</th>
                             <th>Amount</th>
                             <th>
-                                <a href="{% url 'remove_all' %}" class="btn btn-sm btn-danger"><strong>Delete All</strong></a>
+                                <a id="delete-all-button" href="{% url 'remove_all' %}" class="btn btn-sm btn-danger"><strong>Delete All</strong></a>
                             </th>
                         </tr>
 
@@ -76,7 +76,7 @@
                             <td>{{trade.security}}</td>
                             <td>{{trade.amount}}</td>
                             <td>
-                                <a href="{% url 'remove' trade.id %}" class="btn btn-sm btn-warning">Remove</a>
+                                <a id="remove-button" href="{% url 'remove' trade.id %}" class="btn btn-sm btn-warning">Delete</a>
                             </td>
                             <td class="extrades" hidden>{{trade.id}}</td>
                         </tr>
