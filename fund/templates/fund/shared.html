@@ -2,24 +2,15 @@
 {% load static %}
 
 {% block content %}
-<div id="allposts-view">
-    <h1>All Posts</h1>
-    <div class="post">
-        {% if user.is_authenticated %}
-        <form class="new_post">
-            <h3>New Post</h3>
-            <textarea id="post_content" placeholder="Tell the world!"></textarea>
-            <input id="content" type="submit" class="btn btn-primary" value="Post"/>
-        </form>
-        {% endif %}
-    </div>
+<div id="shared-view">
+    <h1>All Shared Scenarios</h1>
     <div id="allposts">
     </div>
 </div>
-<div id="profile-view">
+{% comment %} <div id="profile-view">
 </div>
 <div id="following-view">
-</div>
+</div> {% endcomment %}
 {% endblock %}
 
 {% block script %}

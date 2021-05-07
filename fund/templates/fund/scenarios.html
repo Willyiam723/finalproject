@@ -58,7 +58,7 @@
                     <div id="button-wrapper-header">
                         <div>Effective Trades</div>
                         <a id="save-post" href="#" class="btn btn-sm btn-success" name="save-post">Save Scenario</a>
-                        <a hidden id="publish-post" href="#" class="btn btn-sm btn-primary" name="publish-post">Publish</a>
+                        <a hidden id="publish-post" href="#" class="btn btn-sm btn-primary" name="publish-post">{{ post.publish }}</a>
                     </div>
                     <table class="table table-sm">
                         <tr>
@@ -82,7 +82,7 @@
                         </tr>
                         {% endfor %}
                     </table>
-                    <textarea id="scenario_content" placeholder="Enter description for the scenario"></textarea>
+                    <textarea id="scenario_content" placeholder="Enter description for the scenario">{{ post.content }}</textarea>
                         {% comment %} <hr> {% endcomment %}
                     {% comment %} {% endfor %} {% endcomment %}
                     {% comment %} <input type="submit" class="btn btn-sm btn-info" name="Submit"> {% endcomment %}

@@ -41,14 +41,21 @@ def scenarios(request):
 
             # trades = Trade.objects.filter(id__in=)
             post = Post.objects.get(id=postid)
+            if post.publish == True:
+                post.publish = "Unpublish"
+            elif post.publish == False:
+                post.publish = "Publish"
             # print(post.trade.trade_post.all())
             extrade = post.trade.all()
             print(extrade)
         else:
             extrade = Trade.objects.filter(user=user)
+            # post = []
     else:
         extrade = []
     formset_empty = TradeFormSet()
+    if postid is None:
+        post = []
 
     # Return message if request is sent via "POST" for creating a new trade
     if request.method == "POST":
@@ -73,9 +80,11 @@ def scenarios(request):
         #     })
     
     else:
+        print(post)
         return render(request, "fund/scenarios.html", {
             "formset_empty":formset_empty,
-            "extrade":extrade
+            "extrade":extrade,
+            "post":post
             })
     # return render(request, "fund/scenarios.html")
 
@@ -282,6 +291,23 @@ def load_posts(request, page):
     #     posts = Post.objects.all()
     # else:
     posts = Post.objects.filter(user_id=request.user.id)
+    print(posts)
+
+    # Return posts in reverse chronologial order in terms of time posted
+    posts = posts.order_by("-date_time").all()
+
+    return paginator(request, posts, page)
+
+# Function to load all posts
+def load_posts_published(request, page):
+
+    # filter = int(filter)
+    # # Get all post information
+    # if filter == 0:
+    #     posts = Post.objects.all()
+    # else:
+    posts = Post.objects.filter(publish=True)
+    # posts = posts.objects.filter(publish=True)
     print(posts)
 
     # Return posts in reverse chronologial order in terms of time posted
