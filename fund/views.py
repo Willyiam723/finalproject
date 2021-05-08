@@ -46,16 +46,23 @@ def scenarios(request):
             elif post.publish == False:
                 post.publish = "Publish"
             # print(post.trade.trade_post.all())
+            if post.user == user:
+                save_post = "Save Scenario Description"
+            else:
+                save_post = "Save as New Secenario"
+            # print(user)
+            # print(post.user)
             extrade = post.trade.all()
-            print(extrade)
+            # print(extrade)
         else:
             extrade = Trade.objects.filter(user=user)
             # post = []
     else:
         extrade = []
     formset_empty = TradeFormSet()
-    if postid is None:
+    if (postid is None) or (userid is None):
         post = []
+        save_post = "Save Scenario"
 
     # Return message if request is sent via "POST" for creating a new trade
     if request.method == "POST":
@@ -81,10 +88,12 @@ def scenarios(request):
     
     else:
         print(post)
+        print(save_post)
         return render(request, "fund/scenarios.html", {
             "formset_empty":formset_empty,
             "extrade":extrade,
-            "post":post
+            "post":post,
+            "save_post": save_post
             })
     # return render(request, "fund/scenarios.html")
 
@@ -251,13 +260,14 @@ def create_post(request):
             print(trade)
             post.trade.add(trade)
 
-        return JsonResponse({"message": "Post published successfully.", "post_id": post.id})
+        return JsonResponse({"message": "Post published successfully.", "post": post})
     # Return true if request is sent via "PUT" for updating an existing post
     elif request.method == "PUT":
         # Update the post
         data = json.loads(request.body)
         post_id = int(data["post_id"])
         publish_post = data["publish_post"]
+        content = data["scenario_content"]
         post = Post.objects.get(id=post_id)
         print(post_id)
         print(publish_post)
@@ -265,20 +275,30 @@ def create_post(request):
         # Enable back-end check to ensure user is updating his/her own scenario post
         if post.user_id != request.user.id:
             return HttpResponse(status = 401)
-        if (publish_post == "Publish") & (post.publish == False):
-            post.publish = True
-        elif (publish_post == "Unpublish") & (post.publish == True):
-            post.publish = False
-        else:
-            return JsonResponse({"error": "Database not synchronized with web display."}, status = 400)
+        if publish_post != "":
+            # Update publish status
+            if (publish_post == "Publish") & (post.publish == False):
+                post.publish = True
+            elif (publish_post == "Unpublish") & (post.publish == True):
+                post.publish = False
+            else:
+                return JsonResponse({"error": "Database not synchronized with web display."}, status = 400)
 
-        post.save()
-        if publish_post == "Publish":
-            publish_post = "Unpublish"
+            post.save()
+            if publish_post == "Publish":
+                publish_post = "Unpublish"
+            else:
+                publish_post = "Publish"
+            print(publish_post)
+            return JsonResponse({"message": "Post updated successfully.", "publish_post": publish_post})
         else:
-            publish_post = "Publish"
-        print(publish_post)
-        return JsonResponse({"message": "Post updated successfully.", "publish_post": publish_post})
+            # Update post content and date_time
+            post.content = content
+            post.date_time = timezone.now()
+            print(post.content)
+            print(post.date_time)
+            post.save()
+            return JsonResponse({"message": "Post updated successfully."})
     else:
         return JsonResponse({"error": "POST or PUT requests required."}, status = 400)
 

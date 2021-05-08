@@ -645,8 +645,11 @@ document.addEventListener('DOMContentLoaded', function() {
       delete_all_button.innerHTML = "Clear all from Post";
       delete_all_button.href = `clear_all_from_post/${postid}`;
 
-      let publish_post = document.getElementById('publish-post');
-      publish_post.hidden = false;
+      // let publish_post = document.getElementById('publish-post');
+      // publish_post.hidden = false;
+
+      let post_user = document.getElementById('post_user');
+      post_user.hidden = false;
 
     }
 
@@ -1484,9 +1487,63 @@ document.addEventListener('DOMContentLoaded', function() {
     //   console.log(formset);
     // }
 
+    // Run update post content function when user is the creator of the post
+    let post_user = document.getElementById('post_user').innerHTML
+    post_user = post_user.replace('Creator: ', '');
+    let username = document.getElementById('username').innerHTML
+    username = username.replace('Hello, ', '');
 
-    // Create a scenario post when save button is clicked
-    document.querySelector('#save-post').addEventListener('click', () => create_post());
+    // Only update post content and time stamp when save scenario button is clicked
+    if (post_user === username) {
+      document.querySelector('#save-post').addEventListener('click', () => update_post(postid));
+      
+      // Allow updating publish post only user is the creator of post
+      let publish_post = document.getElementById('publish-post');
+      publish_post.hidden = false;
+    }
+    // Otherwise create a new scenario post when save button is clicked
+    else {
+      document.querySelector('#save-post').addEventListener('click', () => create_post());
+    }
+    
+    // Function to update post content and time stamp
+    function update_post(postid) {
+
+      // Retrieve post information
+      let post_id = '';
+      if (postid === '') {
+        post_id = document.getElementById('post-id').innerHTML;
+      }
+      else {
+        post_id = postid;
+      }
+      let scenario_content = document.getElementById('scenario_content').value;
+
+      console.log(post_id);
+      console.log(scenario_content);
+      
+      // Update post information
+      fetch('/create_post', {
+        method: 'PUT',
+        // Send Django CSRF Token
+        headers:{
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            post_id: post_id,
+            scenario_content: scenario_content,
+            publish_post: ""
+        })
+      })
+      .then(response => response.json())
+      .then(result => {
+        // Print result
+        console.log(result);
+        // Reset value of the form
+        // document.getElementById('publish-post').innerHTML = result.publish_post;
+
+      });
+    }
     
     // Function to create a new scenario post
     function create_post() {
@@ -1526,10 +1583,21 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(result);
         // Reset value of the form
         // document.getElementById('scenario_content').value = '';
-        document.getElementById('publish-post').hidden = false;
+        let publish_post = document.getElementById('publish-post');
+        if (result.post.publish) {
+          publish_post.innerHTML = "Unpublish";
+        }
+        else {
+          publish_post.innerHTML = "Publish";
+        }
+        publish_post.hidden = false;
+
+        let save_post = document.getElementById('save-post');
+        save_post.innerHTML = "Save Scenario Description";
+
         const post_id = document.createElement('div');
         post_id.id = "post-id";
-        post_id.innerHTML = result.post_id;
+        post_id.innerHTML = result.post.id;
         const button_wrapper_header = document.getElementById('button-wrapper-header');
         button_wrapper_header.append(post_id);
         post_id.style.display = "none";
@@ -1564,13 +1632,14 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         body: JSON.stringify({
             post_id: post_id,
-            publish_post: publish_post
+            publish_post: publish_post,
+            scenario_content: ""
         })
       })
       .then(response => response.json())
       .then(result => {
-          // Print result
-          console.log(result);
+        // Print result
+        console.log(result);
         // Reset value of the form
         document.getElementById('publish-post').innerHTML = result.publish_post;
 

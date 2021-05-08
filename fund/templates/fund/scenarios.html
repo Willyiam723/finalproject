@@ -57,8 +57,9 @@
                 <div class="effective-trades">
                     <div id="button-wrapper-header">
                         <div>Effective Trades</div>
-                        <a id="save-post" href="#" class="btn btn-sm btn-success" name="save-post">Save Scenario</a>
+                        <a id="save-post" href="#" class="btn btn-sm btn-success" name="save-post">{{ save_post }}</a>
                         <a hidden id="publish-post" href="#" class="btn btn-sm btn-primary" name="publish-post">{{ post.publish }}</a>
+                        <div hidden id="post_user">Creator: {{ post.user }}</div>
                     </div>
                     <table class="table table-sm">
                         <tr>
