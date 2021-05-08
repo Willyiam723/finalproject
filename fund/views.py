@@ -260,7 +260,7 @@ def create_post(request):
             print(trade)
             post.trade.add(trade)
 
-        return JsonResponse({"message": "Post published successfully.", "post": post})
+        return JsonResponse({"message": "Post published successfully.", "post": post.serialize(request.user, trade)})
     # Return true if request is sent via "PUT" for updating an existing post
     elif request.method == "PUT":
         # Update the post

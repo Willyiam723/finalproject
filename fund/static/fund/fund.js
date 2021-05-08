@@ -1031,7 +1031,43 @@ document.addEventListener('DOMContentLoaded', function() {
       let data_lev = []
 
       // Make sure columns with no change are hidden
-      if (tr_sd === 0 & tr_unsd === 0) {
+      if (tr_sd === 0 & tr_unsd === 0 & tr_syn === 0) {
+        data_lev = [
+          {
+              name: "leverage",
+              type: "waterfall",
+              orientation: "v",
+              measure: [
+                  "relative",
+                  "total"
+              ],
+              x: [
+                  "Starting Leverage",
+                  "Ending Leverage"
+              ],
+              textposition: "outside",
+              text: [
+                `${tot_l_start}`,
+                `${tot_l}`
+              ],          
+              y: [
+                  tot_l_start,
+                  tot_l
+              ],
+              // connectgaps=True,
+              connector: {
+                line: {
+                  color: "rgba(255, 209, 0, 0.2)"
+                }
+              },
+              decreasing: { marker: { color: "rgba(255, 0, 247, 0.2)", line:{color : "red", width :1}}},
+              increasing: { marker: { color: "rgba(0, 93, 255, 0.2)", line:{color : "green", width :1}} },
+              totals: { marker: { color: "rbga(46, 120, 223, 0.2)", line:{color:'blue',width:1}}},
+              cliponaxis: false
+            }
+        ];
+      }
+      else if (tr_sd === 0 & tr_unsd === 0) {
         data_lev = [
           {
               name: "leverage",
