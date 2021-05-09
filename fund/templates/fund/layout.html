@@ -21,13 +21,10 @@
                         <a class="nav-link" href="#"><strong id="username">{{ user.username }}</strong></a>
                     </li>
                 {% endif %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'shared' %}">All Posts</a>
-                </li>
+                {% comment %} <li class="nav-item">
+                  <a class="nav-link" href="{% url 'scenarios' %}">Scenarios</a>
+                </li> {% endcomment %}
                 {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" id="following">Following</a>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
                     </li>

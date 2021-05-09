@@ -587,16 +587,16 @@ document.addEventListener('DOMContentLoaded', function() {
   if (localStorage.getItem("dark-mode") === "false") {
     html.classList.add(lightModeClass);
     switchInput.checked = false;
-    switchLabelText.textContent = "Light";
+    switchLabelText.textContent = "Day";
   }
 
   switchInput.addEventListener("input", function () {
     html.classList.toggle(lightModeClass);
     if (html.classList.contains(lightModeClass)) {
-      switchLabelText.textContent = "Light";
+      switchLabelText.textContent = "Day";
       localStorage.setItem("dark-mode", "false");
     } else {
-      switchLabelText.textContent = "Dark";
+      switchLabelText.textContent = "Night";
       localStorage.setItem("dark-mode", "true");
     }
   });
@@ -1582,6 +1582,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Otherwise create a new scenario post when save button is clicked
     else {
       document.querySelector('#save-post').addEventListener('click', () => create_post());
+
+      // Disable deleting trades if user is not creator
+      let remove_button = document.getElementsByClassName("btn btn-sm btn-warning");
+      for (let i=0; i < remove_button.length; i++) {
+        remove_button[i].hidden = true;
+      }
+      let delete_all_button = document.getElementById('delete-all-button');
+      delete_all_button.hidden = true;
     }
     
     // Function to update post content and time stamp
@@ -1679,6 +1687,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const button_wrapper_header = document.getElementById('button-wrapper-header');
         button_wrapper_header.append(post_id);
         post_id.style.display = "none";
+        window.location.assign(`/?postid=${result.post.id}`); 
       });
     }
 
@@ -1727,10 +1736,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show alert box
     let alertbox = document.getElementById('alert-box');
 
-    const handleAlerts = (type, message) => {
-      alertbox.innerHTML = `<div class="alert alert-${type}" role="alert>${message}</div>`
-    }
-
 
     // Send csv file to store in database
     Dropzone.autoDiscover = false;
@@ -1747,12 +1752,12 @@ document.addEventListener('DOMContentLoaded', function() {
           if(response.flag) {
             alertbox.innerHTML = `${response.message}`;
             alertbox.className = "message-success";
+            location.reload();
           }
           else {
             alertbox.innerHTML = `${response.message}`
             alertbox.className = "message";
           }
-          location.reload();
         })
       },
       maxFiles: 3,
@@ -1763,7 +1768,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Function to display pagination feature
-  function pagination(page, num_pages) {
+  function pagination(page, num_pages, publish_post) {
       
     // Create pagination wrapper
     const pagination = document.createElement('ul');
@@ -1779,6 +1784,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     else {
       previous.className = "page-item";
+      if (publish_post) {
+        previous.addEventListener('click', () => load_posts_published(page-1));
+      }
       previous.addEventListener('click', () => load_posts(page-1));
     }
     // Create link to navigate pages
@@ -1798,6 +1806,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       else {
         middle.className = "page-item";
+        if (publish_post) {
+          middle.addEventListener('click', () => load_posts_published(page_item));
+        }
         middle.addEventListener('click', () => load_posts(page_item));
       }
       // Create link to navigate pages
@@ -1817,6 +1828,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     else {
       next.className = "page-item";
+      if (publish_post) {
+        next.addEventListener('click', () => load_posts_published(page+1));
+      }
       next.addEventListener('click', () => load_posts(page+1));
       }
     
@@ -1930,19 +1944,19 @@ document.addEventListener('DOMContentLoaded', function() {
       heart.style.display = 'none';
     }
 
-    // Create edit link for user's post only
-    if (document.getElementById('username')){
-      // Check if the post is belong to logged in user
-      if (post.username === document.getElementById('username').innerHTML) {
-        const edit = document.createElement('a');
-        edit.className = "edit";
-        edit.id = `${post.id}_edit`
-        edit.innerHTML = "Edit";
-        // Enable user to click on the edit link to see edit post
-        // edit.addEventListener('click', () => edit_post(post));
-        post_block.append(edit);
-      }
-    }
+    // // Create edit link for user's post only
+    // if (document.getElementById('username')){
+    //   // Check if the post is belong to logged in user
+    //   if (post.username === document.getElementById('username').innerHTML) {
+    //     const edit = document.createElement('a');
+    //     edit.className = "edit";
+    //     edit.id = `${post.id}_edit`
+    //     edit.innerHTML = "Edit";
+    //     // Enable user to click on the edit link to see edit post
+    //     // edit.addEventListener('click', () => edit_post(post));
+    //     post_block.append(edit);
+    //   }
+    // }
 
     // Enable user to click on a user name to see profile page
     // user_name.addEventListener('click', () => display_profilepage(post.userid, post.username));
@@ -2007,7 +2021,7 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch(`posts/${page}`)
       .then(response => response.json())
       .then(response => {
-        pagination(page, response.num_pages);
+        pagination(page, response.num_pages, false);
         console.log(response.posts);
         // Display posts
         response.posts.forEach(post => display_post(post, 'saved'));
@@ -2033,7 +2047,7 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch(`posts_published/${page}`)
       .then(response => response.json())
       .then(response => {
-        pagination(page, response.num_pages);
+        pagination(page, response.num_pages, true);
         console.log(response.posts);
         // Display posts
         response.posts.forEach(post => display_post(post, 'shared'));

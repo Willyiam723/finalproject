@@ -110,11 +110,16 @@ def csv_upload_view(request):
     if request.method == 'POST':
         csv_file = request.FILES.get('file')
         sample = CSV.objects.create(file_name=csv_file)
-        print(request.POST.get("postid"))
         postid = request.POST.get("postid")
         userid = request.user.id
         user = User.objects.get(id=userid)
         print(postid)
+        if postid:
+            post = Post.objects.get(id=postid)
+            print(post.user)
+            print(user)
+            if post.user != user:
+                return JsonResponse({"message": "Failed! You are not the creator of this scenario. Please save as a new scenario before submitting trades.", "flag": False})
 
         with open(sample.file_name.path, 'r') as f:
             trades = csv.reader(f)
@@ -127,7 +132,6 @@ def csv_upload_view(request):
                 elif trade[0] == "Sell":
                     cum_amount -= float(trade[2])
             if round(cum_amount,0) != 0:
-                print(cum_amount)
                 return JsonResponse({"message": "Failed! Please ensure buy and sell amount nets off.", "flag": False})
             else:
                 with open(sample.file_name.path, 'r') as f:
@@ -396,7 +400,7 @@ def load_posts_published(request, page):
 # Function to paginate posts
 def paginator(request, posts, page):
     # Show 10 posts per page
-    paginator = Paginator(posts, 10)
+    paginator = Paginator(posts, 5)
 
     # Get current page number
     page_number = page
