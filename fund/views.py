@@ -12,7 +12,7 @@ import json, datetime
 from django.forms import inlineformset_factory
 from django.db.models import Sum, Case, When
 import csv
-from .models import User, Post, Profile, Liquidity, Leverage, Trade, CSV
+from .models import User, Post, Liquidity, Leverage, Trade, CSV
 
 # Ensure assets and debts are available for functions to have access
 assets = ['HQLA', 'LA', 'ILA']
