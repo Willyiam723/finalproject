@@ -11,9 +11,11 @@ from django.core.paginator import Paginator
 import json, datetime
 from django.forms import inlineformset_factory
 from django.db.models import Sum, Case, When
+from django.views.generic import TemplateView
+import csv
 
 
-from .models import User, Post, Profile, Liquidity, Leverage, Trade
+from .models import User, Post, Profile, Liquidity, Leverage, Trade, CSV
 
 assets = ['HQLA', 'LA', 'ILA']
 debts = ['Secured Debt', 'Unsecured Debt', 'Synthetics']
@@ -96,6 +98,62 @@ def scenarios(request):
             "save_post": save_post
             })
     # return render(request, "fund/scenarios.html")
+
+# For dropzone csv template view
+class UploadTemplateView(TemplateView):
+    template_name = "scenarios"
+
+# Load csv dropzone file into database
+def csv_upload_view(request):
+    print('file is being sent')
+
+    if request.method == 'POST':
+        csv_file = request.FILES.get('file')
+        sample = CSV.objects.create(file_name=csv_file)
+        print(request.POST.get("postid"))
+        postid = request.POST.get("postid")
+        userid = request.user.id
+        user = User.objects.get(id=userid)
+        print(postid)
+
+        with open(sample.file_name.path, 'r') as f:
+            trades = csv.reader(f)
+            trades.__next__()
+            cum_amount = 0
+            # Form control check to ensure buy amount and sell amount nets off
+            for trade in trades:
+                if trade[0] == "Buy":
+                    cum_amount += float(trade[2])
+                elif trade[0] == "Sell":
+                    cum_amount -= float(trade[2])
+            if round(cum_amount,0) != 0:
+                print(cum_amount)
+                return JsonResponse({"message": "Failed! Please ensure buy and sell amount nets off.", "flag": False})
+            else:
+                with open(sample.file_name.path, 'r') as f:
+                    trades = csv.reader(f)
+                    trades.__next__()
+                    # Add trades to post if user is editing a post
+                    if postid:
+                        post = Post.objects.get(id=postid)
+                        for trade in trades:
+                            trade_entry = Trade.objects.create(user=user,transaction=trade[0],security=trade[1],amount=trade[2])
+                            trade_entry.save
+                            post.trade.add(trade_entry)
+                            # return redirect('/?postid={}'.format(postid))
+                        return JsonResponse({"message": "Trades uploaded successfully.", "flag": True})
+                    # Just add trades if user is not editing a post
+                    elif postid == "":
+                        for trade in trades:
+                            trade_entry = Trade.objects.create(user=user,transaction=trade[0],security=trade[1],amount=trade[2])
+                            trade_entry.save
+                            # return redirect("scenarios")
+                        return JsonResponse({"message": "Trades uploaded successfully.", "flag": True})
+                    else:
+                        # return redirect("scenarios")
+                        return JsonResponse({"message": "Failed! Please ensure required fields are entered in csv file correctly", "flag": False})
+    # return HttpResponse()
+    return JsonResponse({"message": "POST request required.", "flag": False}, status = 400)
 
 def remove(request, trade_id):
     TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), max_num=2)

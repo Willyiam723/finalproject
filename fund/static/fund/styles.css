@@ -513,6 +513,12 @@ strong {
   color: white;
 }
 
+.message-success {
+  padding: 20px;
+  background-color:#4faf6f;
+  color: white;
+}
+
  .add_form {
    padding: 20px;
    margin: auto;
@@ -565,7 +571,16 @@ strong {
     height: 100% !important;
     width: 100% !important;
   } */
+.dropzone {
+  border-style: dashed;
+  border-radius: 5px;
+  border-color:var(--page-content-blockColor);
+  transition: 0.5s;
+}
 
+.dropzone:hover {
+  background-color: var(--page-header-bgColor);
+}
 
 /* MQ RULES
 –––––––––––––––––––––––––––––––––––––––––––––––––– */

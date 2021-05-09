@@ -12,6 +12,8 @@
 //   load_posts(filter=0, page=1);
 // });
 
+// const Dropzone = require("./dropzone");
+
 // // Function to create a new post
 // function create_post() {
 
@@ -850,8 +852,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Assume cashoutflow is 200
       let tr_cof = -200
-
-      if (tr_hqla === 0) {
+      
+      if ((tr_hqla === 0) & (tr_la === 0)) {
+        data_liq = [
+          {
+              name: "liquidity surplus",
+              type: "waterfall",
+              orientation: "v",
+              textposition: "outside",
+              measure: [
+                  "relative",
+                  "relative",
+                  "total"
+              ],
+              x: [
+                  "Starting Surplus",
+                  "Cash Outflow",
+                  "Ending Surplus"
+              ],
+              text: [
+                  `${li.surplus}`,
+                  `${tr_cof}`,
+                  `${li.surplus + tr_hqla + tr_la + tr_cof}`
+              ],          
+              y: [
+                  li.surplus,
+                  tr_cof,
+                  li.surplus + tr_hqla + tr_la
+              ],
+              // connectgaps=True,
+              connector: {
+                line: {
+                  color: "rgba(255, 209, 0, 0.2)"
+                }
+              },
+              decreasing: { marker: { color: "rgba(255, 0, 247, 0.2)", line:{color : "red", width :1}}},
+              increasing: { marker: { color: "rgba(0, 93, 255, 0.2)", line:{color : "green", width :1}} },
+              totals: { marker: { color: "rbga(46, 120, 223, 0.2)", line:{color:'blue',width:1}}},
+              cliponaxis: false
+          }
+        ];
+      }
+      else if (tr_hqla === 0) {
         data_liq = [
           {
               name: "liquidity surplus",
@@ -1681,6 +1723,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
       });
     }
+
+    // Show alert box
+    let alertbox = document.getElementById('alert-box');
+
+    const handleAlerts = (type, message) => {
+      alertbox.innerHTML = `<div class="alert alert-${type}" role="alert>${message}</div>`
+    }
+
+
+    // Send csv file to store in database
+    Dropzone.autoDiscover = false;
+    const myDropzone = new Dropzone('#my-dropzone', {
+      url: 'upload/',
+      init: function() {
+        this.on('sending', function(file, xhr, formData){
+          console.log('sending');
+          formData.append('X-CSRFToken', getCookie('csrftoken'));
+          formData.append('postid', postid);
+        })
+        this.on('success', function(file, response) {
+          console.log(response.flag)
+          if(response.flag) {
+            alertbox.innerHTML = `${response.message}`;
+            alertbox.className = "message-success";
+          }
+          else {
+            alertbox.innerHTML = `${response.message}`
+            alertbox.className = "message";
+          }
+          location.reload();
+        })
+      },
+      maxFiles: 3,
+      maxFilesize: 3,
+      acceptedFiles: '.csv'
+    })
 
   }
 

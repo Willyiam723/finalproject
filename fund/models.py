@@ -118,3 +118,12 @@ class Leverage(models.Model):
             "synthetics": self.synthetics,
             "leverage": self.secured_debt + self.unsecured_debt + self.synthetics
         }
+
+class CSV(models.Model):
+    file_name = models.FileField(upload_to='csvs')
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.file_name)
+    

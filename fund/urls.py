@@ -18,6 +18,7 @@ urlpatterns = [
     path("like", views.like_unlike, name="like"),
     path("main", views.main_page, name="main_page"),
     path("", views.scenarios, name="scenarios"),
+    path("upload/", views.csv_upload_view, name="upload"),
     path("saved", views.saved, name="saved"),
     path("charts/<int:postid>", views.charts_post, name="charts_post"),
     path("charts/", views.charts, name="charts"),
