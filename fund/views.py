@@ -11,71 +11,64 @@ from django.core.paginator import Paginator
 import json, datetime
 from django.forms import inlineformset_factory
 from django.db.models import Sum, Case, When
-from django.views.generic import TemplateView
 import csv
-
-
 from .models import User, Post, Profile, Liquidity, Leverage, Trade, CSV
 
+# Ensure assets and debts are available for functions to have access
 assets = ['HQLA', 'LA', 'ILA']
 debts = ['Secured Debt', 'Unsecured Debt', 'Synthetics']
 
 def main_page(request):
     return render(request, "fund/main_page.html")
 
+# Render information for senarios view
 def scenarios(request):
-    # Check if additional trade form is asked
+    # Check if additional trade form slot is asked
     add_trade_form = request.GET.get("add")
+    # Check if requesting for a specific post
     postid = request.GET.get("postid")
-    print(postid)
+    # Add trade form slot if asked
     if add_trade_form is None:
         TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), can_delete = False, max_num=2)
     else:
         TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), can_delete = False, extra=int(add_trade_form)+1)
+    # Get user information
     userid = request.user.id
     if userid:
         user = User.objects.get(id=userid)
         # Get post information
         if postid:
-            # following_user = User.objects.filter(id__in=request.user.following.all()).all()
-            # # Get post information
-            # posts = Post.objects.filter(user__in=following_user).all()
-
-            # trades = Trade.objects.filter(id__in=)
             post = Post.objects.get(id=postid)
             if post.publish == True:
                 post.publish = "Unpublish"
             elif post.publish == False:
                 post.publish = "Publish"
-            # print(post.trade.trade_post.all())
+            # Label save scenario button when user is the creator of the post
             if post.user == user:
                 save_post = "Save Scenario Description"
             else:
                 save_post = "Save as New Secenario"
-            # print(user)
-            # print(post.user)
+            # Get all trades from the post
             extrade = post.trade.all()
-            # print(extrade)
+        # Otherwise get all trades created by the user
         else:
             extrade = Trade.objects.filter(user=user)
-            # post = []
     else:
         extrade = []
+    # Get new trade form for user to input
     formset_empty = TradeFormSet()
     if (postid is None) or (userid is None):
         post = []
         save_post = "Save Scenario"
 
-    # Return message if request is sent via "POST" for creating a new trade
+    # Return if request is sent via "POST" for creating a new trade from entering trade formset
     if request.method == "POST":
         # Create the trade
         formset = TradeFormSet(request.POST, instance=user)
         if formset.is_valid():
             formset.save()
-
             # Add trades created to the post
             trades = Trade.objects.filter(user=user)
-
             # Track the trades just created
             trades = trades.order_by("-id")[:int(request.POST['trade_user-TOTAL_FORMS'])]
             if postid:
@@ -83,25 +76,15 @@ def scenarios(request):
                     post.trade.add(trade)
                 return redirect('/?postid={}'.format(postid))
         return redirect("scenarios")
-        # return render(request, "fund/scenarios.html", {
-        #     "formset_empty":formset_empty,
-        #     "extrade":extrade
-        #     })
-    
+
+    # Return information for senarios view
     else:
-        print(post)
-        print(save_post)
         return render(request, "fund/scenarios.html", {
             "formset_empty":formset_empty,
             "extrade":extrade,
             "post":post,
             "save_post": save_post
             })
-    # return render(request, "fund/scenarios.html")
-
-# For dropzone csv template view
-class UploadTemplateView(TemplateView):
-    template_name = "scenarios"
 
 # Load csv dropzone file into database
 def csv_upload_view(request):
@@ -109,15 +92,14 @@ def csv_upload_view(request):
 
     if request.method == 'POST':
         csv_file = request.FILES.get('file')
+        # Create CSV object
         sample = CSV.objects.create(file_name=csv_file)
         postid = request.POST.get("postid")
         userid = request.user.id
         user = User.objects.get(id=userid)
-        print(postid)
+        # Ensure only creator of the post can add trades to the post, ask user to save as a scenario to add trades
         if postid:
             post = Post.objects.get(id=postid)
-            print(post.user)
-            print(user)
             if post.user != user:
                 return JsonResponse({"message": "Failed! You are not the creator of this scenario. Please save as a new scenario before submitting trades.", "flag": False})
 
@@ -137,28 +119,25 @@ def csv_upload_view(request):
                 with open(sample.file_name.path, 'r') as f:
                     trades = csv.reader(f)
                     trades.__next__()
-                    # Add trades to post if user is editing a post
+                    # Creat and add trades to post if user is editing a post
                     if postid:
                         post = Post.objects.get(id=postid)
                         for trade in trades:
                             trade_entry = Trade.objects.create(user=user,transaction=trade[0],security=trade[1],amount=trade[2])
                             trade_entry.save
                             post.trade.add(trade_entry)
-                            # return redirect('/?postid={}'.format(postid))
                         return JsonResponse({"message": "Trades uploaded successfully.", "flag": True})
-                    # Just add trades if user is not editing a post
+                    # Just create trades if user is not editing a post
                     elif postid == "":
                         for trade in trades:
                             trade_entry = Trade.objects.create(user=user,transaction=trade[0],security=trade[1],amount=trade[2])
                             trade_entry.save
-                            # return redirect("scenarios")
                         return JsonResponse({"message": "Trades uploaded successfully.", "flag": True})
                     else:
-                        # return redirect("scenarios")
                         return JsonResponse({"message": "Failed! Please ensure required fields are entered in csv file correctly", "flag": False})
-    # return HttpResponse()
     return JsonResponse({"message": "POST request required.", "flag": False}, status = 400)
 
+# Function to delete a single trade from database
 def remove(request, trade_id):
     TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), max_num=2)
     userid = request.user.id
@@ -168,19 +147,15 @@ def remove(request, trade_id):
     else:
         extrade = []
     formset_empty = TradeFormSet()
-
-    print(request)
-    print(trade_id)
     user = User.objects.get(id=request.user.id)
 
     # Get trade information
     trade_remove = Trade.objects.get(id=trade_id)
-    print(trade_remove)
-
     trade_remove.delete()
     
     return redirect("scenarios")
 
+# Function to delete all trades created by the user
 def remove_all(request):
     TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"), max_num=2)
     userid = request.user.id
@@ -190,18 +165,15 @@ def remove_all(request):
     else:
         extrade = []
     formset_empty = TradeFormSet()
-
-    print(request)
     user = User.objects.get(id=request.user.id)
 
     # Get trade information
     trade_remove = Trade.objects.filter(user=user).all()
-    print(trade_remove)
-
     trade_remove.delete()
     
     return redirect("scenarios")
 
+# Function to delete a single trade from an existing post
 def remove_from_post(request, post_id, trade_id):
 
     # Get post and trade information
@@ -213,6 +185,7 @@ def remove_from_post(request, post_id, trade_id):
 
     return redirect('/?postid={}'.format(post_id))
 
+# Function to delete all trades from an existing post
 def clear_all_from_post(request, post_id):
     
     # Get post information
@@ -225,20 +198,15 @@ def clear_all_from_post(request, post_id):
     
     return redirect('/?postid={}'.format(post_id))
 
+# Render saved view
 def saved(request):
-    # # Get all post information
-    # posts = Post.objects.filter(user_id=request.user.id)
-
-    # # Return posts in reverse chronologial order in terms of time posted
-    # posts = posts.order_by("-date_time").all()
-
-    # return paginator(request, posts, page)
     return render(request, "fund/saved.html")
 
+# Render shared view
 def shared(request):
     return render(request, "fund/shared.html")
 
-
+# Render login view
 def login_view(request):
     if request.method == "POST":
 
@@ -258,12 +226,12 @@ def login_view(request):
     else:
         return render(request, "fund/login.html")
 
-
+# Render logout view
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("login"))
 
-
+# Render registration view
 def register(request):
     if request.method == "POST":
         username = request.POST["username"]
@@ -304,9 +272,6 @@ def create_post(request):
         data = json.loads(request.body)
         trade_ids = data.get("trade_ids", "")
         content = data.get("content", "")
-        print(data)
-        print(trade_ids)
-        print(content)
         date_time = timezone.now()
         user = request.user.id
         post = Post(
@@ -319,11 +284,11 @@ def create_post(request):
         # Add trades
         for trade_id in trade_ids:
             trade = Trade.objects.get(id=trade_id)
-            print(trade)
             post.trade.add(trade)
 
         return JsonResponse({"message": "Post published successfully.", "post": post.serialize(request.user, trade)})
-    # Return true if request is sent via "PUT" for updating an existing post
+
+    # Return if request is sent via "PUT" for updating an existing post
     elif request.method == "PUT":
         # Update the post
         data = json.loads(request.body)
@@ -331,8 +296,6 @@ def create_post(request):
         publish_post = data["publish_post"]
         content = data["scenario_content"]
         post = Post.objects.get(id=post_id)
-        print(post_id)
-        print(publish_post)
         
         # Enable back-end check to ensure user is updating his/her own scenario post
         if post.user_id != request.user.id:
@@ -346,51 +309,36 @@ def create_post(request):
             else:
                 return JsonResponse({"error": "Database not synchronized with web display."}, status = 400)
 
+            # Save post and render updated publishing status
             post.save()
             if publish_post == "Publish":
                 publish_post = "Unpublish"
             else:
                 publish_post = "Publish"
-            print(publish_post)
             return JsonResponse({"message": "Post updated successfully.", "publish_post": publish_post})
         else:
-            # Update post content and date_time
+            # Update existing post content and date_time
             post.content = content
             post.date_time = timezone.now()
-            print(post.content)
-            print(post.date_time)
             post.save()
             return JsonResponse({"message": "Post updated successfully."})
     else:
         return JsonResponse({"error": "POST or PUT requests required."}, status = 400)
 
-# Function to load all posts
+# Function to load posts belong to the user
 def load_posts(request, page):
 
-    # filter = int(filter)
-    # # Get all post information
-    # if filter == 0:
-    #     posts = Post.objects.all()
-    # else:
     posts = Post.objects.filter(user_id=request.user.id)
-    print(posts)
 
     # Return posts in reverse chronologial order in terms of time posted
     posts = posts.order_by("-date_time").all()
 
     return paginator(request, posts, page)
 
-# Function to load all posts
+# Function to load published posts
 def load_posts_published(request, page):
 
-    # filter = int(filter)
-    # # Get all post information
-    # if filter == 0:
-    #     posts = Post.objects.all()
-    # else:
     posts = Post.objects.filter(publish=True)
-    # posts = posts.objects.filter(publish=True)
-    print(posts)
 
     # Return posts in reverse chronologial order in terms of time posted
     posts = posts.order_by("-date_time").all()
@@ -399,7 +347,7 @@ def load_posts_published(request, page):
 
 # Function to paginate posts
 def paginator(request, posts, page):
-    # Show 10 posts per page
+    # Show 5 posts per page
     paginator = Paginator(posts, 5)
 
     # Get current page number
@@ -408,11 +356,6 @@ def paginator(request, posts, page):
 
     # # Get trades information for the post
     trade = Trade.objects.filter(user=request.user).all()
-    # trade_ids = post.trades_id_list() for post in posts
-    # print(trade_ids)
-
-    # print(posts.serialize(request.user))
-    print(post.serialize(request.user) for post in page_obj)
 
     # Return post information
     return JsonResponse({
@@ -420,61 +363,6 @@ def paginator(request, posts, page):
         "num_pages": paginator.num_pages
         }
         ,safe=False)
-
-# Function to load following posts
-def load_following_posts(request, page):
-
-    following_user = User.objects.filter(id__in=request.user.following.all()).all()
-    # Get post information
-    posts = Post.objects.filter(user__in=following_user).all()
-
-    # Return posts in reverse chronologial order in terms of time posted
-    posts = posts.order_by("-date_time").all()
-
-    return paginator(request, posts, page)
-
-
-
-# Function to load profile page
-def load_profile(request, userid):
-
-    # Get all profile information
-    try:
-        profile = Profile.objects.get(pk=userid)
-    except:
-        user = User.objects.get(pk=userid)
-        profile = Profile.objects.create(user=user)
-
-    # Return profile information
-    return JsonResponse(profile.serialize(request.user))
-
-# Function to allow signed-in users to follow or unfollow another user 
-# If the user is already followed, the function will unfollow the user
-@login_required
-def follow_unfollow(request):
-    # Follow or unfollow must be via POST
-    if request.method != "POST":
-        return JsonResponse({"error": "POST request required."}, status=400)
-
-    # Get relevant data
-    data = json.loads(request.body)
-    follow_id = data.get("follow_id", "")
-    user_id = request.user.id
-
-    # Get profile and user information
-    profile = Profile.objects.get(id=follow_id)
-    user = User.objects.get(id=user_id)
-
-    # Follow the profile if not yet following, or unfollow the profile if already following
-    if profile in user.following.all():
-        profile.follower.remove(user)
-        print(f"{user} is already following {profile.user.username} therefore unfollowed")
-    else:
-        profile.follower.add(user)
-        print(f"{user} is not yet following {profile.user.username} but now added")
-
-    # Return profile information
-    return JsonResponse(profile.serialize(request.user))
    
 # Function to allow signed-in users to like or unlike a post
 # If the already liked a post, the function will unlike the post
@@ -505,39 +393,6 @@ def like_unlike(request):
     # Return post information
     return JsonResponse(post.serialize(request.user, trade))
 
-# Function to create or update a trade set
-@login_required
-def create_trade(request):
-    TradeFormSet = inlineformset_factory(User, Trade, fields=("transaction", "security", "amount"))
-    userid = request.user.id
-    user = User.objects.get(id=userid)
-    formset = TradeFormSet(instance=user)
-
-    # Return message if request is sent via "POST" for creating a new post
-    if request.method == "POST":
-        # Create the post
-        formset = TradeFormSet(request.POST, instance=user)
-        formset.save()
-        return render(request, "fund/scenarios.html")
-    # Return true if request is sent via "PUT" for updating an existing post
-    # elif request.method == "PUT":
-    #     # Update the post
-    #     data = json.loads(request.body)
-    #     post_id = int(data["id"])
-    #     content = data["content"]
-    #     post = Post.objects.get(id=post_id)
-        
-    #     # Enable back-end double check to ensure user is editing his/her own post
-    #     if post.user_id != request.user.id:
-    #         return HttpResponse(status = 401)
-    #     post.content = content
-    #     post.save()
-    #     return JsonResponse({"result": True}, status = 200)
-    else:
-        return render(request, "fund/scenarios.html", {
-            "formset":formset
-            })
-
 # Function to load charts info
 def charts(request):
 
@@ -550,12 +405,6 @@ def charts(request):
 
     # Get trade information
     trade = Trade.objects.filter(user=user).all()
-    # result = trade.annotate(
-    #     amount=Case(
-    #         When(transaction='Buy', then=("amount")),
-    #         When(transaction='Sell', then=-("amount"))
-    #     ),
-    # ).values_list('transaction','security','amount')
 
     # Flag correct signs for asset and leverage items
     trade = trade.values('security','transaction').order_by('security','transaction').annotate(amount=Sum('amount'))
@@ -576,13 +425,12 @@ def charts(request):
     return JsonResponse({
         "liquidity": liquidity.serialize(request.user),
         "leverage": leverage.serialize(request.user),
-        # "posts": [post.serialize(request.user) for post in page_obj]
         "trades": [trade for trade in trade]
         }
         ,safe=False)
 
 
-# Function to load charts info
+# Function to load charts info for a specific post
 def charts_post(request, postid):
 
     user = User.objects.get(id=request.user.id)
@@ -598,13 +446,6 @@ def charts_post(request, postid):
     # Get trade information
     trade = post.trade.all()
 
-    # result = trade.annotate(
-    #     amount=Case(
-    #         When(transaction='Buy', then=("amount")),
-    #         When(transaction='Sell', then=-("amount"))
-    #     ),
-    # ).values_list('transaction','security','amount')
-
     # Flag correct signs for asset and leverage items
     trade = trade.values('security','transaction').order_by('security','transaction').annotate(amount=Sum('amount'))
 
@@ -624,7 +465,6 @@ def charts_post(request, postid):
     return JsonResponse({
         "liquidity": liquidity.serialize(request.user),
         "leverage": leverage.serialize(request.user),
-        # "posts": [post.serialize(request.user) for post in page_obj]
         "trades": [trade for trade in trade]
         }
         ,safe=False)

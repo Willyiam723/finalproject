@@ -28,11 +28,6 @@
             <div class="grid-cell">
                 <div class="trade-form-wrapper">
                     <div class="trade-form">Trades</div>
-                            {% comment %} <tr>
-                                <th>Transaction</th>
-                                <th>Security</th>
-                                <th>Amount</th>
-                            </tr> {% endcomment %}
                         <form id="form" class="form" action="{% url 'scenarios' %}" method="POST">
                             {% csrf_token %}
                             {{formset_empty.management_form}}
@@ -84,16 +79,11 @@
                         {% endfor %}
                     </table>
                     <textarea id="scenario_content" placeholder="Enter description for the scenario">{{ post.content }}</textarea>
-                        {% comment %} <hr> {% endcomment %}
-                    {% comment %} {% endfor %} {% endcomment %}
-                    {% comment %} <input type="submit" class="btn btn-sm btn-info" name="Submit"> {% endcomment %}
-                {% comment %} </form> {% endcomment %}
                 </div>
             </div>
         </article>
         <article class="grid-chart">
             <h5>Upload Trades Below</h5>
-            {% comment %} <br> {% endcomment %}
             <div id="alert-box"></div>
             <form id="my-dropzone" class="dropzone">
                 {% csrf_token %}
